@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+
 import { 
   Store, 
   TruckIcon, 
@@ -16,17 +17,33 @@ import {
   Headphones
 } from "lucide-react"
 
-export default function LandingPage() {
+// Al inicio de tu página (o en el componente que contiene esa sección)
+// Si tu archivo es page.tsx agrégale esto arriba
+
+async function getStats() {
+  try {
+    const res = await fetch('http://localhost:3000/api/auth/stats', {
+      cache: 'no-store' // siempre datos frescos
+    })
+    const data = await res.json()
+    return data
+  } catch {
+    return { tenderos_activos: 0, proveedores_activos: 0 }
+  }
+}
+
+export default async function LandingPage() {
+  const stats = await getStats()
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Store className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg">
+              <img src="/Logo.svg" alt="TenderMarket" width={300} height={300} />
             </div>
-            <span className="text-xl font-bold text-foreground">TenderMarket</span>
+            <span className="text-xl font-bold text-foreground"> <span className="text-primary">Tender</span><span className="text-accent">Market</span></span>
           </Link>
           
           <nav className="hidden items-center gap-8 md:flex">
@@ -120,27 +137,36 @@ export default function LandingPage() {
 
       {/* Stats Section */}
       <section className="border-y border-border bg-muted/30 py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary sm:text-4xl">10K+</div>
-              <div className="mt-1 text-sm text-muted-foreground">Tenderos Activos</div>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+
+          <div className="text-center">
+            <div className="text-3xl font-bold text-primary sm:text-4xl">
+              {stats.tenderos_activos}+
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary sm:text-4xl">500+</div>
-              <div className="mt-1 text-sm text-muted-foreground">Proveedores</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary sm:text-4xl">50K+</div>
-              <div className="mt-1 text-sm text-muted-foreground">Pedidos Mensuales</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary sm:text-4xl">98%</div>
-              <div className="mt-1 text-sm text-muted-foreground">Satisfacción</div>
-            </div>
+            <div className="mt-1 text-sm text-muted-foreground">Tenderos Activos</div>
           </div>
+
+          <div className="text-center">
+            <div className="text-3xl font-bold text-primary sm:text-4xl">
+              {stats.proveedores_activos}+
+            </div>
+            <div className="mt-1 text-sm text-muted-foreground">Proveedores</div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-3xl font-bold text-primary sm:text-4xl">50K+</div>
+            <div className="mt-1 text-sm text-muted-foreground">Pedidos Mensuales</div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-3xl font-bold text-primary sm:text-4xl">98%</div>
+            <div className="mt-1 text-sm text-muted-foreground">Satisfacción</div>
+          </div>
+
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Features Section */}
       <section id="features" className="py-20 sm:py-28">
