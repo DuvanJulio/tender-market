@@ -1,5 +1,3 @@
-// /app/api/auth/sign-in/route.ts
-
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse, NextRequest } from 'next/server'
 

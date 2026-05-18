@@ -1,5 +1,3 @@
-// /app/api/auth/stats/route.ts
-
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
@@ -18,7 +16,7 @@ export async function GET() {
 
     if (!estadoId) {
       return NextResponse.json(
-        { error: 'No se encontró el estado activo' },
+        { success: false, message: 'No se encontró el estado activo' },
         { status: 500 }
       )
     }
@@ -37,20 +35,24 @@ export async function GET() {
 
     if (errorTenderos || errorProveedores) {
       return NextResponse.json(
-        { error: 'Error al obtener estadísticas' },
+        { success: false, message: 'Error al obtener estadísticas' },
         { status: 500 }
       )
     }
 
     return NextResponse.json({
-      tenderos_activos: tenderos ?? 0,
-      proveedores_activos: proveedores ?? 0
+      success: true,
+      message: 'Estadísticas obtenidas exitosamente',
+      data: { 
+        tenderos_activos: tenderos ?? 0,
+        proveedores_activos: proveedores ?? 0
+      }
     })
 
   } catch (error) {
     console.error('Error en stats API:', error)
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { success: false, message: 'Error interno del servidor' },
       { status: 500 }
     )
   }
