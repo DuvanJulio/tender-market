@@ -1,4 +1,4 @@
-// /app/api/stats/route.ts
+// /app/api/auth/stats/route.ts
 
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
@@ -48,7 +48,7 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('Error en stats:', error)
+    console.error('Error en stats API:', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

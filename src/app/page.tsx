@@ -1,10 +1,8 @@
-"use client"
-
 import Link from "next/link"
 
 import { 
   Store, 
-  TruckIcon, 
+  Truck, 
   ShieldCheck, 
   ArrowRight, 
   Package, 
@@ -17,13 +15,11 @@ import {
   Headphones
 } from "lucide-react"
 
-// Al inicio de tu página (o en el componente que contiene esa sección)
-// Si tu archivo es page.tsx agrégale esto arriba
-
 async function getStats() {
   try {
-    const res = await fetch('http://localhost:3000/api/auth/stats', {
-      cache: 'no-store' // siempre datos frescos
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const res = await fetch(`${baseUrl}/api/auth/stats`, {
+      cache: 'no-store'
     })
     const data = await res.json()
     return data
@@ -112,7 +108,7 @@ export default async function LandingPage() {
                 href="/auth/register?role=proveedor"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-accent bg-accent/5 px-6 py-3 text-base font-semibold text-accent-foreground transition-all hover:bg-accent hover:text-accent-foreground sm:w-auto"
               >
-                <TruckIcon className="h-5 w-5" />
+                <Truck className="h-5 w-5" />
                 Soy Proveedor
               </Link>
             </div>
@@ -204,7 +200,7 @@ export default async function LandingPage() {
 
             <div className="group rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-success/10">
-                <TruckIcon className="h-6 w-6 text-success" />
+                <Truck className="h-6 w-6 text-success" />
               </div>
               <h3 className="mt-4 text-lg font-semibold text-card-foreground">Entrega Rápida</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -298,7 +294,7 @@ export default async function LandingPage() {
             {/* Proveedores Flow */}
             <div>
               <div className="mb-8 flex items-center justify-center gap-2">
-                <TruckIcon className="h-6 w-6 text-accent" />
+                <Truck className="h-6 w-6 text-accent" />
                 <h3 className="text-xl font-semibold text-foreground">Para Proveedores</h3>
               </div>
               <div className="grid gap-8 md:grid-cols-3">
