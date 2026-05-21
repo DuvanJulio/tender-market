@@ -26,7 +26,7 @@ export const NavbarHeader = () => {
 
                 <div className="flex items-center gap-3">
                     <Link
-                        href="/auth/login"
+                        href="/sign-in"
                         className="hidden text-sm font-medium text-foreground transition-colors hover:text-primary sm:block"
                     >
                         Iniciar Sesión
