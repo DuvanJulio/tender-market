@@ -1,5 +1,5 @@
-import { SignInTemplate } from '@/features/auth/sign-in/template';
+import { SignInTemplate } from "@/features/auth/sign-in"
 
 export default function SignInPage() {
-  return <SignInTemplate />;
+  return <SignInTemplate />
 }
