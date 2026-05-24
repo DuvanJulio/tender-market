@@ -1,4 +1,4 @@
-export * from "./action"
+export * from "./actions"
 export * from "./components"
 export * from "./const"
 export * from "./interfaces"

@@ -1,6 +1,7 @@
+import axios from "axios"
 import type { ISignUpRequest, ISignUpResponse, TSignUpRole } from "../interfaces"
 import type { TSignUpFormData } from "../const"
-import axios from "axios"
+import { apiClient } from "@/lib/api-client"
 
 const SIGN_UP_ENDPOINT = "/api/auth/sign-up"
 
@@ -39,17 +40,13 @@ export async function signUpAction(
   const payload: ISignUpRequest = mapFormDataToRequest(data)
 
   try {
-    const res = await axios.post(SIGN_UP_ENDPOINT, payload)
+    const res = await apiClient.post<ISignUpResponse>(SIGN_UP_ENDPOINT, payload)
 
     if (res.status < 200 || res.status >= 300) {
       throw new Error(res.data.message)
     }
 
-    return {
-      success: true,
-      message: res.data.message,
-      data: res.data.data,
-    }
+    return res.data
   } catch (error) {
     if (axios.isAxiosError(error)) {
       return {
@@ -58,6 +55,7 @@ export async function signUpAction(
           error.response?.data?.message ?? "Error al registrar el usuario",
       }
     }
+
     return { success: false, message: "Error de conexión. Intenta de nuevo." }
   }
 }

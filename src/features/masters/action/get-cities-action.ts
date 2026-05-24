@@ -1,11 +1,12 @@
 import axios from "axios"
 import type { IGetCitiesResponse } from "../interfaces"
+import { apiClient } from "@/lib/api-client"
 
 const GET_CITIES_ENDPOINT = "/api/masters/cities"
 
 export async function apiGetCitiesAction(): Promise<IGetCitiesResponse> {
   try {
-    const res = await axios.get<IGetCitiesResponse>(GET_CITIES_ENDPOINT)
+    const res = await apiClient.get<IGetCitiesResponse>(GET_CITIES_ENDPOINT)
 
     if (res.status < 200 || res.status >= 300) {
       return { success: false, message: "No se pudieron cargar las ciudades" }

@@ -18,6 +18,19 @@ export interface ISignInResponse {
   data?: ISignInResponseData
 }
 
+export interface IGetUserDataResponseData {
+  isAuthenticated: boolean
+  nombre?: string
+  email?: string
+  rol?: TUserRole
+}
+
+export interface IGetUserDataResponse {
+  success: boolean
+  message: string
+  data?: IGetUserDataResponseData
+}
+
 /** @deprecated Usar TSignInFormData desde const/sign-in-schema */
 export type SignInFormData = {
   email: string

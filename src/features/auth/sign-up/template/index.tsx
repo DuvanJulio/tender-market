@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAppDispatch, useAppSelector } from "@/store"
+import { setAuthToken } from "@/lib/api-client"
 import {
   clearRegisterError,
   registerUser,
@@ -81,6 +82,7 @@ export function SignUpTemplate() {
     if (!payload?.success) return
 
     if (payload.data?.token) {
+      setAuthToken(payload.data.token)
       router.push(getRedirectPathByRole(payload.data.rol))
       return
     }

@@ -1,7 +1,7 @@
 import { createAppSlice } from "@/store/slice"
 import type { TStatus } from "@/types"
 import type { TSignInFormData } from "@/features/auth/sign-in/const"
-import { signInAction } from "@/features/auth/sign-in/action"
+import { signInAction } from "@/features/auth/sign-in/actions"
 
 type TSignInState = {
   signIn: {
