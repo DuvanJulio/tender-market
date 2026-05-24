@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { useDispatch, useSelector } from 'react-redux'
 import landingReducer from '@/store/landing/landing-slice'
+import signUpReducer from '@/store/auth/sign-up-slice'
 import mastersReducer from '@/store/masters/masters-slice'
 
 export const store = configureStore({
     reducer: {
         landing: landingReducer,
+        signUp: signUpReducer,
         masters: mastersReducer,
     },
 
