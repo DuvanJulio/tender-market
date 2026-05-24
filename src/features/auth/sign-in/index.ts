@@ -1,6 +1,5 @@
 export * from "./action"
 export * from "./components"
 export * from "./const"
-export * from "./hooks"
 export * from "./interfaces"
 export * from "./template"
