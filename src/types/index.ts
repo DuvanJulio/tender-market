@@ -1,3 +1,5 @@
-export * from "./base-respnse"
-export * from "./status"
-
+export type TBaseResponse<T> = {
+  success: boolean
+  message: string
+  data?: T
+}
