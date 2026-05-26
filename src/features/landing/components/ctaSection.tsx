@@ -15,14 +15,14 @@ export const CTASection = () => {
                     </p>
                     <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                         <Link
-                            href="/auth/register"
+                            href="/sign-up"
                             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-base font-semibold text-primary shadow-lg transition-all hover:bg-white/90 sm:w-auto"
                         >
                             Crear Cuenta Gratis
                             <ArrowRight className="h-5 w-5" />
                         </Link>
                         <Link
-                            href="/auth/login"
+                            href="/sign-in"
                             className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-primary-foreground/30 px-6 py-3 text-base font-semibold text-primary-foreground transition-all hover:bg-primary-foreground/10 sm:w-auto"
                         >
                             Ya tengo cuenta

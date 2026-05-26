@@ -28,14 +28,14 @@ export const HeroSection = () => {
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/auth/register?role=tendero"
+              href="/sign-up?role=tendero"
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-all hover:bg-primary/90 hover:shadow-xl sm:w-auto"
             >
               <Store className="h-5 w-5" />
               Soy Tendero
             </Link>
             <Link
-              href="/auth/register?role=proveedor"
+              href="/sign-up?role=proveedor"
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-accent bg-accent/5 px-6 py-3 text-base font-semibold text-accent-foreground transition-all hover:bg-accent hover:text-accent-foreground sm:w-auto"
             >
               <Truck className="h-5 w-5" />

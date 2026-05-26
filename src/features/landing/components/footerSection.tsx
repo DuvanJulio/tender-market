@@ -21,7 +21,7 @@ export const FooterSection = () => {
                     <div>
                         <h4 className="font-semibold text-card-foreground">Para Tenderos</h4>
                         <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                            <li><Link href="/auth/register?role=tendero" className="hover:text-foreground">Registrarse</Link></li>
+                            <li><Link href="/sign-up?role=tendero" className="hover:text-foreground">Registrarse</Link></li>
                             <li><Link href="#" className="hover:text-foreground">Ver Catálogo</Link></li>
                             <li><Link href="#" className="hover:text-foreground">Preguntas Frecuentes</Link></li>
                         </ul>
@@ -30,7 +30,7 @@ export const FooterSection = () => {
                     <div>
                         <h4 className="font-semibold text-card-foreground">Para Proveedores</h4>
                         <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                            <li><Link href="/auth/register?role=proveedor" className="hover:text-foreground">Registrarse</Link></li>
+                            <li><Link href="/sign-up?role=proveedor" className="hover:text-foreground">Registrarse</Link></li>
                             <li><Link href="#" className="hover:text-foreground">Panel de Control</Link></li>
                             <li><Link href="#" className="hover:text-foreground">{"Términos y Condiciones"}</Link></li>
                         </ul>

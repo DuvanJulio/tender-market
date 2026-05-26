@@ -26,13 +26,13 @@ export const NavbarHeader = () => {
 
                 <div className="flex items-center gap-3">
                     <Link
-                        href="./sign-in"
+                        href="/sign-in"
                         className="hidden text-sm font-medium text-foreground transition-colors hover:text-primary sm:block"
                     >
                         Iniciar Sesión
                     </Link>
                     <Link
-                        href="/auth/register"
+                        href="/sign-up"
                         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                         Registrarse

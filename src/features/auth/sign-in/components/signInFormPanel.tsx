@@ -56,7 +56,7 @@ export function SignInFormPanel({
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
             {"¿No tienes cuenta?"}{" "}
-            <Link href="/auth/register" className="font-medium text-primary hover:text-primary/80">
+            <Link href="/sign-up" className="font-medium text-primary hover:text-primary/80">
               Registrarse
             </Link>
           </p>
