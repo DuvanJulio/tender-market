@@ -4,6 +4,7 @@ import landingReducer from '@/store/landing/landing-slice'
 import signInReducer from '@/store/auth/sign-in-slice'
 import signUpReducer from '@/store/auth/sign-up-slice'
 import mastersReducer from '@/store/masters/masters-slice'
+import adminCiudadesReducer from '@/store/admin/ciudades-slice'
 
 export const store = configureStore({
     reducer: {
@@ -11,6 +12,7 @@ export const store = configureStore({
         signIn: signInReducer,
         signUp: signUpReducer,
         masters: mastersReducer,
+        adminCiudades: adminCiudadesReducer,
     },
 
 })
