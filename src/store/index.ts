@@ -5,6 +5,8 @@ import signInReducer from '@/store/auth/sign-in-slice'
 import signUpReducer from '@/store/auth/sign-up-slice'
 import mastersReducer from '@/store/masters/masters-slice'
 import adminCiudadesReducer from '@/store/admin/ciudades-slice'
+import adminCategoriasReducer from '@/store/admin/categorias-slice'
+import adminProductosReducer from '@/store/admin/productos-slice'
 
 export const store = configureStore({
     reducer: {
@@ -13,6 +15,8 @@ export const store = configureStore({
         signUp: signUpReducer,
         masters: mastersReducer,
         adminCiudades: adminCiudadesReducer,
+        adminCategorias: adminCategoriasReducer,
+        adminProductos: adminProductosReducer,
     },
 
 })

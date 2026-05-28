@@ -6,22 +6,49 @@ import {
   ChevronRight,
   Edit,
   FolderTree,
+  Loader2,
   Package,
   Plus,
   Trash2,
 } from "lucide-react"
-import type { TCategoria } from "../const"
+import type { TCategoria, TDeleteCategoriaTarget } from "../interfaces"
 
 interface CategoriasListProps {
   categories: TCategoria[]
+  isLoading?: boolean
+  deletingId: number | null
+  onDelete: (target: TDeleteCategoriaTarget) => void
+  onAddSubcategoria: (parentId: number) => void
 }
 
-export function CategoriasList({ categories }: CategoriasListProps) {
+export function CategoriasList({
+  categories,
+  isLoading = false,
+  deletingId,
+  onDelete,
+  onAddSubcategoria,
+}: CategoriasListProps) {
   const [expandedCategories, setExpandedCategories] = useState<number[]>([])
 
   const toggleCategory = (id: number) => {
     setExpandedCategories((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border border-border bg-card py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (categories.length === 0) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+        No hay categorías registradas. Crea la primera con el botón superior.
+      </div>
     )
   }
 
@@ -45,6 +72,7 @@ export function CategoriasList({ categories }: CategoriasListProps) {
                   type="button"
                   onClick={() => toggleCategory(category.id)}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted"
+                  aria-expanded={expandedCategories.includes(category.id)}
                 >
                   {expandedCategories.includes(category.id) ? (
                     <ChevronDown className="h-4 w-4" />
@@ -57,7 +85,7 @@ export function CategoriasList({ categories }: CategoriasListProps) {
                 </div>
                 <div>
                   <p className="font-medium text-card-foreground">
-                    {category.name}
+                    {category.nombre}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     /{category.slug}
@@ -66,33 +94,48 @@ export function CategoriasList({ categories }: CategoriasListProps) {
               </div>
               <div className="col-span-2">
                 <span className="rounded-lg bg-muted px-2.5 py-1 text-sm font-medium text-muted-foreground">
-                  {category.products}
+                  {category.productos}
                 </span>
               </div>
               <div className="col-span-3">
                 <span className="text-sm text-muted-foreground">
-                  {category.subcategories.length} subcategorías
+                  {category.subcategorias.length} subcategorías
                 </span>
               </div>
               <div className="col-span-2 flex gap-2">
                 <button
                   type="button"
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="Editar categoría"
+                  disabled
                 >
                   <Edit className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() =>
+                    onDelete({
+                      id: category.id,
+                      nombre: category.nombre,
+                      esSubcategoria: false,
+                    })
+                  }
+                  disabled={deletingId === category.id}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                  aria-label="Eliminar categoría"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  {deletingId === category.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>
 
             {expandedCategories.includes(category.id) && (
               <div className="bg-muted/20">
-                {category.subcategories.map((sub) => (
+                {category.subcategorias.map((sub) => (
                   <div
                     key={sub.id}
                     className="grid grid-cols-12 items-center gap-4 border-t border-border/50 py-3 pl-20 pr-4"
@@ -100,12 +143,12 @@ export function CategoriasList({ categories }: CategoriasListProps) {
                     <div className="col-span-5 flex items-center gap-3">
                       <Package className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-card-foreground">
-                        {sub.name}
+                        {sub.nombre}
                       </span>
                     </div>
                     <div className="col-span-2">
                       <span className="text-sm text-muted-foreground">
-                        {sub.products}
+                        {sub.productos}
                       </span>
                     </div>
                     <div className="col-span-3" />
@@ -113,14 +156,29 @@ export function CategoriasList({ categories }: CategoriasListProps) {
                       <button
                         type="button"
                         className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        aria-label="Editar subcategoría"
+                        disabled
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() =>
+                          onDelete({
+                            id: sub.id,
+                            nombre: sub.nombre,
+                            esSubcategoria: true,
+                          })
+                        }
+                        disabled={deletingId === sub.id}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                        aria-label="Eliminar subcategoría"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        {deletingId === sub.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -128,6 +186,7 @@ export function CategoriasList({ categories }: CategoriasListProps) {
                 <div className="border-t border-border/50 py-3 pl-20 pr-4">
                   <button
                     type="button"
+                    onClick={() => onAddSubcategoria(category.id)}
                     className="flex items-center gap-2 text-sm text-primary hover:text-primary/80"
                   >
                     <Plus className="h-4 w-4" />

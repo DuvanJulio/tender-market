@@ -1,1 +1,1 @@
-export * from "./categorias-mock"
+export * from "./create-categoria-schema"
