@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -19,6 +20,7 @@ import {
   type TSignInFormData,
 } from "../const"
 import type { TUserRole } from "../interfaces"
+import { toast } from "sonner"
 
 const SIGN_IN_DEFAULT_VALUES: TSignInFormData = {
   email: "",
@@ -62,6 +64,17 @@ export function SignInTemplate() {
 
     router.push(getRedirectPathByRole(payload.data?.rol))
   })
+
+  useEffect(() => {
+    if (signInView.status === "loading") {
+      toast.loading("Iniciando sesión...")
+    }
+    if (signInView.status === "success") {
+      toast.dismiss()
+      toast.success(signInView.message)
+    }
+  }, [signInView.status])
+
 
   return (
     <div className="flex min-h-screen">

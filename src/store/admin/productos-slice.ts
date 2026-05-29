@@ -1,5 +1,6 @@
 import { createAppSlice } from "@/store/slice"
 import type { TStatus } from "@/types"
+import { DEFAULT_PAGE_SIZE, type TPaginationMeta } from "@/types/pagination"
 import {
   apiDeleteProductoAction,
   apiGetProductosAction,
@@ -8,6 +9,7 @@ import {
 import type {
   TAdminProducto,
   TAdminProductosSummary,
+  TFetchProductosParams,
   TProductoEstado,
 } from "@/features/admin/productos/interfaces"
 
@@ -16,12 +18,21 @@ type TModeratePayload = {
   estado: Extract<TProductoEstado, "publicado" | "inactivo">
 }
 
+const emptyPagination: TPaginationMeta = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  total: 0,
+  totalPages: 0,
+}
+
 type TAdminProductosState = {
   listView: {
     status: TStatus
     message: string | undefined
     productos: TAdminProducto[]
     summary: TAdminProductosSummary | null
+    pagination: TPaginationMeta
+    query: TFetchProductosParams
   }
   moderateProducto: {
     status: TStatus
@@ -42,12 +53,19 @@ const emptySummary: TAdminProductosSummary = {
   rechazados: 0,
 }
 
+const initialQuery: TFetchProductosParams = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+}
+
 const initialState: TAdminProductosState = {
   listView: {
     status: "idle",
     message: undefined,
     productos: [],
     summary: null,
+    pagination: emptyPagination,
+    query: initialQuery,
   },
   moderateProducto: {
     status: "idle",
@@ -61,44 +79,40 @@ const initialState: TAdminProductosState = {
   },
 }
 
-function recomputeSummary(productos: TAdminProducto[]): TAdminProductosSummary {
-  return {
-    total: productos.length,
-    activos: productos.filter((p) => p.estado === "publicado").length,
-    pendientes: productos.filter((p) => p.estado === "borrador").length,
-    rechazados: productos.filter((p) => p.estado === "inactivo").length,
-  }
-}
-
 const adminProductosSlice = createAppSlice({
   name: "adminProductos",
   initialState,
   reducers: (create) => ({
-    fetchProductos: create.asyncThunk(async () => apiGetProductosAction(), {
-      pending: (state) => {
-        state.listView.status = "loading"
-        state.listView.message = undefined
-      },
-      fulfilled: (state, action) => {
-        if (!action.payload.success || !action.payload.data) {
-          state.listView.status = "error"
+    fetchProductos: create.asyncThunk(
+      async (params: TFetchProductosParams) => apiGetProductosAction(params),
+      {
+        pending: (state, action) => {
+          state.listView.status = "loading"
+          state.listView.message = undefined
+          state.listView.query = action.meta.arg
+        },
+        fulfilled: (state, action) => {
+          if (!action.payload.success || !action.payload.data) {
+            state.listView.status = "error"
+            state.listView.message = action.payload.message
+            state.listView.productos = []
+            state.listView.summary = emptySummary
+            return
+          }
+          state.listView.status = "success"
           state.listView.message = action.payload.message
+          state.listView.productos = action.payload.data.productos.items
+          state.listView.pagination = action.payload.data.productos.pagination
+          state.listView.summary = action.payload.data.summary
+        },
+        rejected: (state) => {
+          state.listView.status = "error"
+          state.listView.message = "No se pudieron cargar los productos"
           state.listView.productos = []
           state.listView.summary = emptySummary
-          return
-        }
-        state.listView.status = "success"
-        state.listView.message = action.payload.message
-        state.listView.productos = action.payload.data.productos
-        state.listView.summary = action.payload.data.summary
-      },
-      rejected: (state) => {
-        state.listView.status = "error"
-        state.listView.message = "No se pudieron cargar los productos"
-        state.listView.productos = []
-        state.listView.summary = emptySummary
-      },
-    }),
+        },
+      }
+    ),
     moderateProducto: create.asyncThunk(
       async ({ productoId, estado }: TModeratePayload) =>
         apiPatchProductoEstadoAction(productoId, estado),
@@ -120,7 +134,6 @@ const adminProductosSlice = createAppSlice({
             state.listView.productos = state.listView.productos.map((p) =>
               p.id === id ? { ...p, estado } : p
             )
-            state.listView.summary = recomputeSummary(state.listView.productos)
           }
         },
         rejected: (state) => {
@@ -149,14 +162,6 @@ const adminProductosSlice = createAppSlice({
             : "error"
           state.deleteProducto.message = action.payload.message
           state.deleteProducto.productoId = null
-
-          if (action.payload.success) {
-            const deletedId = action.payload.data?.id ?? action.meta.arg
-            state.listView.productos = state.listView.productos.filter(
-              (p) => p.id !== deletedId
-            )
-            state.listView.summary = recomputeSummary(state.listView.productos)
-          }
         },
         rejected: (state) => {
           state.deleteProducto.status = "error"
@@ -173,6 +178,7 @@ const adminProductosSlice = createAppSlice({
   }),
   selectors: {
     selectProductosListView: (state) => state.listView,
+    selectProductosQuery: (state) => state.listView.query,
     selectModerateProducto: (state) => state.moderateProducto,
     selectDeleteProducto: (state) => state.deleteProducto,
   },
@@ -187,6 +193,7 @@ export const {
 } = adminProductosSlice.actions
 export const {
   selectProductosListView,
+  selectProductosQuery,
   selectModerateProducto,
   selectDeleteProducto,
 } = adminProductosSlice.selectors

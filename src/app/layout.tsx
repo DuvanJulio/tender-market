@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { Providers } from "@/store/providers";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 
@@ -38,6 +39,7 @@ export default function RootLayout({
     <html lang="es" className={`${inter.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased bg-background min-h-full flex flex-col">
         <Providers>
+          <Toaster />
           {children}
         </Providers>
       </body>

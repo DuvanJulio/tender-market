@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Plus, Search } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/store"
 import {
@@ -8,44 +8,50 @@ import {
   fetchCategorias,
   resetDeleteCategoria,
   selectCategoriasListView,
+  selectCategoriasQuery,
   selectDeleteCategoria,
 } from "@/store/admin/categorias-slice"
-import { AdminPageHeader } from "@/features/admin/components"
-import type { TDeleteCategoriaTarget } from "../interfaces"
+import { AdminPageHeader, AdminTablePagination } from "@/features/admin/components"
+import { DEFAULT_PAGE_SIZE } from "@/types/pagination"
+import type { TDeleteCategoriaTarget, TFetchCategoriasParams } from "../interfaces"
 import { CategoriasCreateModal } from "./categoriasCreateModal"
 import { CategoriasList } from "./categoriasList"
 import { CategoriaDeleteAlertDialog } from "./categoriaDeleteAlertDialog"
 
+function buildFetchParams(
+  page: number,
+  searchQuery: string
+): TFetchCategoriasParams {
+  return {
+    page,
+    pageSize: DEFAULT_PAGE_SIZE,
+    search: searchQuery.trim() || undefined,
+  }
+}
+
 export function CategoriasView() {
   const dispatch = useAppDispatch()
-  const { status, message, categorias } = useAppSelector(selectCategoriasListView)
+  const { status, message, categorias, pagination } = useAppSelector(
+    selectCategoriasListView
+  )
+  const listQuery = useAppSelector(selectCategoriasQuery)
   const deleteState = useAppSelector(selectDeleteCategoria)
 
+  const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddModal, setShowAddModal] = useState(false)
   const [parentIdForSub, setParentIdForSub] = useState<number | null>(null)
   const [targetToDelete, setTargetToDelete] =
     useState<TDeleteCategoriaTarget | null>(null)
 
-  const filteredCategories = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim()
-    if (!query) return categorias
+  const loadCategorias = useCallback(() => {
+    dispatch(fetchCategorias(buildFetchParams(page, searchQuery)))
+  }, [dispatch, page, searchQuery])
 
-    return categorias
-      .map((cat) => {
-        const matchesParent = cat.nombre.toLowerCase().includes(query)
-        const matchingSubs = cat.subcategorias.filter((sub) =>
-          sub.nombre.toLowerCase().includes(query)
-        )
-
-        if (matchesParent) return cat
-        if (matchingSubs.length > 0) {
-          return { ...cat, subcategorias: matchingSubs }
-        }
-        return null
-      })
-      .filter((cat): cat is NonNullable<typeof cat> => cat != null)
-  }, [categorias, searchQuery])
+  useEffect(() => {
+    const timer = setTimeout(loadCategorias, 300)
+    return () => clearTimeout(timer)
+  }, [loadCategorias])
 
   const isLoading = status === "loading" || status === "idle"
   const isError = status === "error"
@@ -79,7 +85,7 @@ export function CategoriasView() {
 
     if (deleteCategoria.fulfilled.match(result) && result.payload.success) {
       setTargetToDelete(null)
-      await dispatch(fetchCategorias())
+      await dispatch(fetchCategorias(listQuery))
     }
   }
 
@@ -106,7 +112,10 @@ export function CategoriasView() {
           <input
             type="search"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setPage(1)
+            }}
             placeholder="Buscar categorías..."
             className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
@@ -125,13 +134,23 @@ export function CategoriasView() {
         </div>
       )}
 
-      <CategoriasList
-        categories={filteredCategories}
-        isLoading={isLoading}
-        deletingId={deleteState.categoriaId}
-        onDelete={handleDeleteRequest}
-        onAddSubcategoria={handleAddSubcategoria}
-      />
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <CategoriasList
+          categories={categorias}
+          isLoading={isLoading}
+          deletingId={deleteState.categoriaId}
+          onDelete={handleDeleteRequest}
+          onAddSubcategoria={handleAddSubcategoria}
+        />
+        {!isLoading && (
+          <AdminTablePagination
+            pagination={pagination}
+            itemLabel="categorías"
+            isLoading={isLoading}
+            onPageChange={setPage}
+          />
+        )}
+      </div>
 
       <CategoriasCreateModal
         open={showAddModal}

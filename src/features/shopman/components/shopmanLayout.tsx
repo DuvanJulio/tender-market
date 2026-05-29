@@ -9,13 +9,16 @@ import {
   type ReactNode,
 } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Bell, ChevronDown, Search, Store } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Bell, Search, Store } from "lucide-react"
+import { useAppDispatch, useAppSelector } from "@/store"
+import { getAuthToken } from "@/lib/api-client"
 import {
-  SHOPMAN_DEFAULT_CART_BADGE,
-  SHOPMAN_NAV_ITEMS,
-  SHOPMAN_USER_MOCK,
-} from "../const"
+  fetchShopmanUser,
+  selectShopmanProfileView,
+} from "@/store/shopman/user-slice"
+import { SHOPMAN_DEFAULT_CART_BADGE, SHOPMAN_NAV_ITEMS } from "../const"
+import { ShopmanUserMenu } from "./shopmanUserMenu"
 
 type ShopmanSearchContextValue = {
   searchTerm: string
@@ -57,11 +60,36 @@ interface ShopmanLayoutProps {
 }
 
 export function ShopmanLayout({ children }: ShopmanLayoutProps) {
+  const dispatch = useAppDispatch()
+  const router = useRouter()
   const pathname = usePathname()
+  const profileView = useAppSelector(selectShopmanProfileView)
   const [searchTerm, setSearchTerm] = useState("")
   const [cartBadgeOverride, setCartBadgeOverride] = useState<number | null>(null)
   const cartBadgeCount = cartBadgeOverride ?? SHOPMAN_DEFAULT_CART_BADGE
   const isCatalog = pathname.startsWith("/shopman/catalog")
+
+  useEffect(() => {
+    const token = getAuthToken()
+    if (!token) {
+      router.replace("/sign-in")
+      return
+    }
+
+    if (profileView.status === "idle") {
+      dispatch(fetchShopmanUser())
+    }
+  }, [dispatch, router, profileView.status])
+
+  useEffect(() => {
+    if (
+      profileView.status === "error" &&
+      !profileView.profile &&
+      getAuthToken()
+    ) {
+      router.replace("/sign-in?session=expired")
+    }
+  }, [profileView.status, profileView.profile, router])
 
   const searchContext = useMemo(
     () => ({ searchTerm, setSearchTerm }),
@@ -108,30 +136,9 @@ export function ShopmanLayout({ children }: ShopmanLayoutProps) {
                 aria-label="Notificaciones"
               >
                 <Bell className="h-4 w-4" />
-                {SHOPMAN_USER_MOCK.notificationCount > 0 ? (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-semibold text-white">
-                    {SHOPMAN_USER_MOCK.notificationCount}
-                  </span>
-                ) : null}
               </button>
 
-              <button
-                type="button"
-                className="flex items-center gap-3 rounded-full border border-border bg-background px-2 py-1.5"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                  {SHOPMAN_USER_MOCK.initials}
-                </span>
-                <div className="hidden text-left text-xs sm:block">
-                  <p className="font-medium text-foreground">
-                    {SHOPMAN_USER_MOCK.name}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {SHOPMAN_USER_MOCK.storeName}
-                  </p>
-                </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </button>
+              <ShopmanUserMenu />
             </div>
           </div>
 

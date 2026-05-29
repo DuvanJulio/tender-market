@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from "@/store"
 import {
   createCategoria,
   fetchCategorias,
+  selectCategoriasQuery,
   resetCreateCategoria,
   selectCategoriasListView,
   selectCreateCategoria,
@@ -37,6 +38,7 @@ export function CategoriasCreateModal({
 }: CategoriasCreateModalProps) {
   const dispatch = useAppDispatch()
   const { categorias } = useAppSelector(selectCategoriasListView)
+  const listQuery = useAppSelector(selectCategoriasQuery)
   const createState = useAppSelector(selectCreateCategoria)
 
   const form = useForm<TCreateCategoriaForm>({
@@ -92,7 +94,7 @@ export function CategoriasCreateModal({
     )
 
     if (createCategoria.fulfilled.match(result) && result.payload.success) {
-      await dispatch(fetchCategorias())
+      await dispatch(fetchCategorias(listQuery))
       handleClose()
     }
   })

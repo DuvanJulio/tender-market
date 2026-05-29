@@ -1,5 +1,6 @@
 import { createAppSlice } from "@/store/slice"
 import type { TStatus } from "@/types"
+import { DEFAULT_PAGE_SIZE, type TPaginationMeta } from "@/types/pagination"
 import {
   apiDeleteUsuarioAction,
   apiGetUsuariosAction,
@@ -8,15 +9,25 @@ import {
 } from "@/features/admin/usuarios/action"
 import type {
   TAdminUsuario,
+  TFetchUsuariosParams,
   TPatchUsuarioBody,
   TUsuarioEstado,
 } from "@/features/admin/usuarios/interfaces"
+
+const emptyPagination: TPaginationMeta = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  total: 0,
+  totalPages: 0,
+}
 
 type TAdminUsuariosState = {
   listView: {
     status: TStatus
     message: string | undefined
     usuarios: TAdminUsuario[]
+    pagination: TPaginationMeta
+    query: TFetchUsuariosParams
   }
   updateUsuario: {
     status: TStatus
@@ -34,11 +45,18 @@ type TAdminUsuariosState = {
   }
 }
 
+const initialQuery: TFetchUsuariosParams = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+}
+
 const initialState: TAdminUsuariosState = {
   listView: {
     status: "idle",
     message: undefined,
     usuarios: [],
+    pagination: emptyPagination,
+    query: initialQuery,
   },
   updateUsuario: {
     status: "idle",
@@ -71,28 +89,38 @@ const adminUsuariosSlice = createAppSlice({
   name: "adminUsuarios",
   initialState,
   reducers: (create) => ({
-    fetchUsuarios: create.asyncThunk(async () => apiGetUsuariosAction(), {
-      pending: (state) => {
-        state.listView.status = "loading"
-        state.listView.message = undefined
-      },
-      fulfilled: (state, action) => {
-        if (!action.payload.success) {
-          state.listView.status = "error"
+    fetchUsuarios: create.asyncThunk(
+      async (params: TFetchUsuariosParams) => apiGetUsuariosAction(params),
+      {
+        pending: (state, action) => {
+          state.listView.status = "loading"
+          state.listView.message = undefined
+          state.listView.query = action.meta.arg
+        },
+        fulfilled: (state, action) => {
+          if (!action.payload.success || !action.payload.data) {
+            state.listView.status = "error"
+            state.listView.message = action.payload.message
+            state.listView.usuarios = []
+            state.listView.pagination = {
+              ...state.listView.pagination,
+              total: 0,
+              totalPages: 0,
+            }
+            return
+          }
+          state.listView.status = "success"
           state.listView.message = action.payload.message
+          state.listView.usuarios = action.payload.data.items
+          state.listView.pagination = action.payload.data.pagination
+        },
+        rejected: (state) => {
+          state.listView.status = "error"
+          state.listView.message = "No se pudieron cargar los usuarios"
           state.listView.usuarios = []
-          return
-        }
-        state.listView.status = "success"
-        state.listView.message = action.payload.message
-        state.listView.usuarios = action.payload.data ?? []
-      },
-      rejected: (state) => {
-        state.listView.status = "error"
-        state.listView.message = "No se pudieron cargar los usuarios"
-        state.listView.usuarios = []
-      },
-    }),
+        },
+      }
+    ),
     updateUsuario: create.asyncThunk(
       async ({
         usuarioId,
@@ -181,13 +209,6 @@ const adminUsuariosSlice = createAppSlice({
             : "error"
           state.deleteUsuario.message = action.payload.message
           state.deleteUsuario.usuarioId = null
-
-          if (action.payload.success) {
-            const deletedId = action.payload.data?.id ?? action.meta.arg
-            state.listView.usuarios = state.listView.usuarios.filter(
-              (u) => u.id !== deletedId
-            )
-          }
         },
         rejected: (state) => {
           state.deleteUsuario.status = "error"
@@ -204,6 +225,7 @@ const adminUsuariosSlice = createAppSlice({
   }),
   selectors: {
     selectUsuariosListView: (state) => state.listView,
+    selectUsuariosQuery: (state) => state.listView.query,
     selectUpdateUsuario: (state) => state.updateUsuario,
     selectUpdateEstado: (state) => state.updateEstado,
     selectDeleteUsuario: (state) => state.deleteUsuario,
@@ -221,6 +243,7 @@ export const {
 } = adminUsuariosSlice.actions
 export const {
   selectUsuariosListView,
+  selectUsuariosQuery,
   selectUpdateUsuario,
   selectUpdateEstado,
   selectDeleteUsuario,

@@ -1,13 +1,26 @@
 import axios from "axios"
-import type { IGetCategoriasResponse } from "../interfaces"
+import type {
+  IGetCategoriasResponse,
+  TFetchCategoriasParams,
+} from "../interfaces"
 import { apiClient } from "@/lib/api-client"
 
 const GET_CATEGORIAS_ENDPOINT = "/api/catalogo/categorias"
 
-export async function apiGetCategoriasAction(): Promise<IGetCategoriasResponse> {
+function buildQueryString(params: TFetchCategoriasParams) {
+  const search = new URLSearchParams()
+  search.set("page", String(params.page))
+  search.set("pageSize", String(params.pageSize))
+  if (params.search?.trim()) search.set("search", params.search.trim())
+  return search.toString()
+}
+
+export async function apiGetCategoriasAction(
+  params: TFetchCategoriasParams
+): Promise<IGetCategoriasResponse> {
   try {
     const res = await apiClient.get<IGetCategoriasResponse>(
-      GET_CATEGORIAS_ENDPOINT
+      `${GET_CATEGORIAS_ENDPOINT}?${buildQueryString(params)}`
     )
 
     if (res.status < 200 || res.status >= 300) {

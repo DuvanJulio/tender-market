@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Loader2, Search } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/store"
 import {
@@ -11,25 +11,35 @@ import {
   selectDeleteUsuario,
   selectUpdateEstado,
   selectUsuariosListView,
+  selectUsuariosQuery,
   updateUsuarioEstado,
 } from "@/store/admin/usuarios-slice"
-import { AdminPageHeader } from "@/features/admin/components"
+import { AdminPageHeader, AdminTablePagination } from "@/features/admin/components"
+import { DEFAULT_PAGE_SIZE } from "@/types/pagination"
+import { toast } from "sonner"
 import {
   ROLE_FILTER_OPTIONS,
   STATUS_FILTER_OPTIONS,
   USUARIO_ROLE_CONFIG,
   estadoAccionToTargetEstado,
-  matchesEstadoFilter,
   type TUsuarioEstadoAccion,
   type TUsuarioEstadoFilter,
   type TUsuarioRolFilter,
 } from "../const"
-import type { TAdminUsuario } from "../interfaces"
+import type { TAdminUsuario, TFetchUsuariosParams } from "../interfaces"
 import { UsuarioRowActions } from "./usuarioRowActions"
 import { UsuarioDetailModal } from "./usuarioDetailModal"
 import { UsuarioEstadoMenu } from "./usuarioEstadoMenu"
 import { UsuarioEstadoAlertDialog } from "./usuarioEstadoAlertDialog"
 import { UsuarioDeleteAlertDialog } from "./usuarioDeleteAlertDialog"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-CO", {
@@ -47,6 +57,21 @@ function filterButtonClass(isActive: boolean) {
   }`
 }
 
+function buildFetchParams(
+  page: number,
+  searchQuery: string,
+  roleFilter: TUsuarioRolFilter,
+  statusFilter: TUsuarioEstadoFilter
+): TFetchUsuariosParams {
+  return {
+    page,
+    pageSize: DEFAULT_PAGE_SIZE,
+    search: searchQuery.trim() || undefined,
+    rol: roleFilter === "all" ? undefined : roleFilter,
+    estado: statusFilter === "all" ? undefined : statusFilter,
+  }
+}
+
 function getInitials(nombre: string) {
   return nombre
     .split(" ")
@@ -59,10 +84,13 @@ function getInitials(nombre: string) {
 
 export function UsuariosView() {
   const dispatch = useAppDispatch()
-  const { status, message, usuarios } = useAppSelector(selectUsuariosListView)
+  const { status, message, usuarios, pagination } =
+    useAppSelector(selectUsuariosListView)
+  const listQuery = useAppSelector(selectUsuariosQuery)
   const updateEstadoState = useAppSelector(selectUpdateEstado)
   const deleteState = useAppSelector(selectDeleteUsuario)
 
+  const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<TUsuarioRolFilter>("all")
   const [statusFilter, setStatusFilter] = useState<TUsuarioEstadoFilter>("all")
@@ -72,23 +100,16 @@ export function UsuariosView() {
     useState<TUsuarioEstadoAccion | null>(null)
   const [deleteUser, setDeleteUser] = useState<TAdminUsuario | null>(null)
 
-  const filteredUsers = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
+  const loadUsuarios = useCallback(() => {
+    dispatch(
+      fetchUsuarios(buildFetchParams(page, searchQuery, roleFilter, statusFilter))
+    )
+  }, [dispatch, page, searchQuery, roleFilter, statusFilter])
 
-    return usuarios.filter((user) => {
-      const matchesSearch =
-        query.length === 0 ||
-        user.nombre.toLowerCase().includes(query) ||
-        (user.email ?? "").toLowerCase().includes(query) ||
-        user.negocio.toLowerCase().includes(query)
-
-      const matchesRole = roleFilter === "all" ? true : user.rol === roleFilter
-
-      const matchesStatus = matchesEstadoFilter(user.estado, statusFilter)
-
-      return matchesSearch && matchesRole && matchesStatus
-    })
-  }, [usuarios, searchQuery, roleFilter, statusFilter])
+  useEffect(() => {
+    const timer = setTimeout(loadUsuarios, 300)
+    return () => clearTimeout(timer)
+  }, [loadUsuarios])
 
   const isLoading = status === "loading" || status === "idle"
   const isError = status === "error"
@@ -118,7 +139,7 @@ export function UsuariosView() {
       if (deleteUsuario.fulfilled.match(result) && result.payload.success) {
         setEstadoUser(null)
         setEstadoAccion(null)
-        await dispatch(fetchUsuarios())
+        await dispatch(fetchUsuarios(listQuery))
       }
       return
     }
@@ -134,7 +155,7 @@ export function UsuariosView() {
     if (updateUsuarioEstado.fulfilled.match(result) && result.payload.success) {
       setEstadoUser(null)
       setEstadoAccion(null)
-      await dispatch(fetchUsuarios())
+      await dispatch(fetchUsuarios(listQuery))
     }
   }
 
@@ -145,9 +166,22 @@ export function UsuariosView() {
 
     if (deleteUsuario.fulfilled.match(result) && result.payload.success) {
       setDeleteUser(null)
-      await dispatch(fetchUsuarios())
+      await dispatch(fetchUsuarios(listQuery))
     }
   }
+
+  // Sonner para cambio de estado
+  useEffect(() => {
+    if (updateEstadoState.status === 'loading') {
+      toast.loading("Cambiando estado del usuario...")
+    }
+
+    if (updateEstadoState.status === "success") {
+      toast.dismiss()
+      toast.success(updateEstadoState.message)
+    }
+  }, [updateEstadoState.status])
+
 
   return (
     <div className="p-4 lg:p-6">
@@ -187,7 +221,10 @@ export function UsuariosView() {
             <button
               key={option.value}
               type="button"
-              onClick={() => setRoleFilter(option.value)}
+              onClick={() => {
+                setRoleFilter(option.value)
+                setPage(1)
+              }}
               className={filterButtonClass(roleFilter === option.value)}
             >
               {option.label}
@@ -200,7 +237,10 @@ export function UsuariosView() {
             <button
               key={option.value}
               type="button"
-              onClick={() => setStatusFilter(option.value)}
+              onClick={() => {
+                setStatusFilter(option.value)
+                setPage(1)
+              }}
               className={filterButtonClass(statusFilter === option.value)}
             >
               {option.label}
@@ -216,138 +256,121 @@ export function UsuariosView() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-border bg-muted/50">
-                  <tr>
-                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Usuario
-                    </th>
-                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Rol
-                    </th>
-                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Negocio
-                    </th>
-                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Ciudad
-                    </th>
-                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Estado
-                    </th>
-                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Actividad
-                    </th>
-                    <th className="p-4" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredUsers.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="p-8 text-center text-sm text-muted-foreground"
-                      >
-                        No hay usuarios que coincidan con los filtros
-                        seleccionados.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredUsers.map((user) => {
-                      const role = USUARIO_ROLE_CONFIG[user.rol]
-                      const RoleIcon = role.icon
+            <Table>
+              <TableHeader className="border-b border-border bg-muted/50">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="p-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Usuario
+                  </TableHead>
+                  <TableHead className="p-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Rol
+                  </TableHead>
+                  <TableHead className="p-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Negocio
+                  </TableHead>
+                  <TableHead className="p-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Ciudad
+                  </TableHead>
+                  <TableHead className="p-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Estado
+                  </TableHead>
+                  <TableHead className="p-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Actividad
+                  </TableHead>
+                  <TableHead className="p-4" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {usuarios.length === 0 ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell
+                      colSpan={7}
+                      className="p-8 text-center text-sm text-muted-foreground"
+                    >
+                      No hay usuarios que coincidan con los filtros
+                      seleccionados.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  usuarios.map((user) => {
+                    const role = USUARIO_ROLE_CONFIG[user.rol]
+                    const RoleIcon = role.icon
 
-                      return (
-                        <tr
-                          key={user.id}
-                          className="transition-colors hover:bg-muted/30"
-                        >
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                                {getInitials(user.nombre)}
-                              </div>
-                              <div>
-                                <p className="font-medium text-card-foreground">
-                                  {user.nombre}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {user.email ?? "Sin email"}
-                                </p>
-                              </div>
+                    return (
+                      <TableRow
+                        key={user.id}
+                        className="hover:bg-muted/30"
+                      >
+                        <TableCell className="p-4 whitespace-normal">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+                              {getInitials(user.nombre)}
                             </div>
-                          </td>
-                          <td className="p-4">
-                            <span
-                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${role.color}`}
-                            >
-                              <RoleIcon className="h-3.5 w-3.5" />
-                              {role.label}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <p className="text-sm text-card-foreground">
-                              {user.negocio}
-                            </p>
-                          </td>
-                          <td className="p-4 text-sm text-muted-foreground">
-                            {user.ciudad ?? "—"}
-                          </td>
-                          <td className="p-4">
-                            <UsuarioEstadoMenu
-                              user={user}
-                              isUpdating={
-                                updateEstadoState.usuarioId === user.id
-                              }
-                              onSelectAccion={handleEstadoAccionSelect}
-                            />
-                          </td>
-                          <td className="p-4">
                             <div>
-                              <p className="text-sm text-card-foreground">
-                                {user.pedidos} pedidos
+                              <p className="font-medium text-card-foreground">
+                                {user.nombre}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {formatPrice(user.total_gastado)}
+                                {user.email ?? "Sin email"}
                               </p>
                             </div>
-                          </td>
-                          <td className="p-4 text-right">
-                            <UsuarioRowActions
-                              user={user}
-                              onViewDetails={(user) => setDetailUserId(user.id)}
-                              onDelete={setDeleteUser}
-                            />
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-4 whitespace-normal">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${role.color}`}
+                          >
+                            <RoleIcon className="h-3.5 w-3.5" />
+                            {role.label}
+                          </span>
+                        </TableCell>
+                        <TableCell className="p-4 whitespace-normal">
+                          <p className="text-sm text-card-foreground">
+                            {user.negocio}
+                          </p>
+                        </TableCell>
+                        <TableCell className="p-4 text-sm text-muted-foreground whitespace-normal">
+                          {user.ciudad ?? "—"}
+                        </TableCell>
+                        <TableCell className="p-4 whitespace-normal">
+                          <UsuarioEstadoMenu
+                            user={user}
+                            isUpdating={
+                              updateEstadoState.usuarioId === user.id
+                            }
+                            onSelectAccion={handleEstadoAccionSelect}
+                          />
+                        </TableCell>
+                        <TableCell className="p-4 whitespace-normal">
+                          <div>
+                            <p className="text-sm text-card-foreground">
+                              {user.pedidos} pedidos
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatPrice(user.total_gastado)}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-4 text-right whitespace-normal">
+                          <UsuarioRowActions
+                            user={user}
+                            onViewDetails={(user) => setDetailUserId(user.id)}
+                            onDelete={setDeleteUser}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
 
-            <div className="flex items-center justify-between border-t border-border p-4">
-              <p className="text-sm text-muted-foreground">
-                Mostrando {filteredUsers.length} de {usuarios.length} usuarios
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled
-                  className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground opacity-50"
-                >
-                  Anterior
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground opacity-50"
-                >
-                  Siguiente
-                </button>
-              </div>
-            </div>
+            <AdminTablePagination
+              pagination={pagination}
+              itemLabel="usuarios"
+              isLoading={isLoading}
+              onPageChange={setPage}
+            />
           </>
         )}
       </div>
