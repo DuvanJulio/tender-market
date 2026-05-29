@@ -1,7 +1,7 @@
 import type { TUserRole } from "../interfaces"
 
 export const ROLE_REDIRECT_ROUTES: Record<TUserRole, string> = {
-  tendero: "/tendero/catalogo",
+  tendero: "/shopman/catalog",
   proveedor: "/proveedor/dashboard",
   admin: "/admin/dashboard",
 }
