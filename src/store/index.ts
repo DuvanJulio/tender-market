@@ -7,6 +7,7 @@ import mastersReducer from '@/store/masters/masters-slice'
 import adminCiudadesReducer from '@/store/admin/ciudades-slice'
 import adminCategoriasReducer from '@/store/admin/categorias-slice'
 import adminProductosReducer from '@/store/admin/productos-slice'
+import adminUsuariosReducer from '@/store/admin/usuarios-slice'
 
 export const store = configureStore({
     reducer: {
@@ -17,6 +18,7 @@ export const store = configureStore({
         adminCiudades: adminCiudadesReducer,
         adminCategorias: adminCategoriasReducer,
         adminProductos: adminProductosReducer,
+        adminUsuarios: adminUsuariosReducer,
     },
 
 })
