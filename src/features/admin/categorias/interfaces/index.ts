@@ -1,3 +1,5 @@
+import type { TPaginationMeta, TPaginatedList } from "@/types/pagination"
+
 export type TCategoriaSub = {
   id: number
   nombre: string
@@ -13,10 +15,16 @@ export type TCategoria = {
   estado: boolean
 }
 
+export type TFetchCategoriasParams = {
+  page: number
+  pageSize: number
+  search?: string
+}
+
 export type IGetCategoriasResponse = {
   success: boolean
   message: string
-  data?: TCategoria[]
+  data?: TPaginatedList<TCategoria>
 }
 
 export type TPostCategoriaBody = {
@@ -48,3 +56,5 @@ export type TDeleteCategoriaTarget = {
   nombre: string
   esSubcategoria: boolean
 }
+
+export type { TPaginationMeta }

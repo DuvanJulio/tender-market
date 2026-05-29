@@ -1,3 +1,6 @@
+import type { TPaginationMeta, TPaginatedList } from "@/types/pagination"
+import type { TProductoEstadoFilter } from "../const"
+
 export type TProductoEstado = "borrador" | "publicado" | "inactivo"
 
 export type TAdminProducto = {
@@ -18,11 +21,18 @@ export type TAdminProductosSummary = {
   rechazados: number
 }
 
+export type TFetchProductosParams = {
+  page: number
+  pageSize: number
+  search?: string
+  estado?: Exclude<TProductoEstadoFilter, "all">
+}
+
 export type IGetProductosAdminResponse = {
   success: boolean
   message: string
   data?: {
-    productos: TAdminProducto[]
+    productos: TPaginatedList<TAdminProducto>
     summary: TAdminProductosSummary
   }
 }
@@ -38,3 +48,5 @@ export type IDeleteProductoResponse = {
   message: string
   data?: { id: number }
 }
+
+export type { TPaginationMeta }

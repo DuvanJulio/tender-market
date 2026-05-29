@@ -23,6 +23,7 @@ export interface IGetUserDataResponseData {
   nombre?: string
   email?: string
   rol?: TUserRole
+  negocio?: string
 }
 
 export interface IGetUserDataResponse {

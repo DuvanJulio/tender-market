@@ -159,7 +159,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 />
                 <div className="absolute right-0 top-12 z-50 w-56 rounded-xl border border-border bg-card shadow-lg">
                   <div className="border-b border-border p-4">
-                    <p className="font-medium text-card-foreground">
+                    <p className="font-medium text-sm text-card-foreground">
                       Administrador
                     </p>
                     <p className="text-sm text-muted-foreground">

@@ -1,5 +1,6 @@
 import { createAppSlice } from "@/store/slice"
 import type { TStatus } from "@/types"
+import { DEFAULT_PAGE_SIZE, type TPaginationMeta } from "@/types/pagination"
 import {
   apiDeleteCategoriaAction,
   apiGetCategoriasAction,
@@ -7,14 +8,24 @@ import {
 } from "@/features/admin/categorias/action"
 import type {
   TCategoria,
+  TFetchCategoriasParams,
   TPostCategoriaBody,
 } from "@/features/admin/categorias/interfaces"
+
+const emptyPagination: TPaginationMeta = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  total: 0,
+  totalPages: 0,
+}
 
 type TAdminCategoriasState = {
   listView: {
     status: TStatus
     message: string | undefined
     categorias: TCategoria[]
+    pagination: TPaginationMeta
+    query: TFetchCategoriasParams
   }
   createCategoria: {
     status: TStatus
@@ -27,11 +38,18 @@ type TAdminCategoriasState = {
   }
 }
 
+const initialQuery: TFetchCategoriasParams = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+}
+
 const initialState: TAdminCategoriasState = {
   listView: {
     status: "idle",
     message: undefined,
     categorias: [],
+    pagination: emptyPagination,
+    query: initialQuery,
   },
   createCategoria: {
     status: "idle",
@@ -48,28 +66,33 @@ const adminCategoriasSlice = createAppSlice({
   name: "adminCategorias",
   initialState,
   reducers: (create) => ({
-    fetchCategorias: create.asyncThunk(async () => apiGetCategoriasAction(), {
-      pending: (state) => {
-        state.listView.status = "loading"
-        state.listView.message = undefined
-      },
-      fulfilled: (state, action) => {
-        if (!action.payload.success) {
-          state.listView.status = "error"
+    fetchCategorias: create.asyncThunk(
+      async (params: TFetchCategoriasParams) => apiGetCategoriasAction(params),
+      {
+        pending: (state, action) => {
+          state.listView.status = "loading"
+          state.listView.message = undefined
+          state.listView.query = action.meta.arg
+        },
+        fulfilled: (state, action) => {
+          if (!action.payload.success || !action.payload.data) {
+            state.listView.status = "error"
+            state.listView.message = action.payload.message
+            state.listView.categorias = []
+            return
+          }
+          state.listView.status = "success"
           state.listView.message = action.payload.message
+          state.listView.categorias = action.payload.data.items
+          state.listView.pagination = action.payload.data.pagination
+        },
+        rejected: (state) => {
+          state.listView.status = "error"
+          state.listView.message = "No se pudieron cargar las categorías"
           state.listView.categorias = []
-          return
-        }
-        state.listView.status = "success"
-        state.listView.message = action.payload.message
-        state.listView.categorias = action.payload.data ?? []
-      },
-      rejected: (state) => {
-        state.listView.status = "error"
-        state.listView.message = "No se pudieron cargar las categorías"
-        state.listView.categorias = []
-      },
-    }),
+        },
+      }
+    ),
     createCategoria: create.asyncThunk(
       async (body: TPostCategoriaBody) => apiPostCategoriaAction(body),
       {
@@ -110,18 +133,6 @@ const adminCategoriasSlice = createAppSlice({
             : "error"
           state.deleteCategoria.message = action.payload.message
           state.deleteCategoria.categoriaId = null
-
-          if (action.payload.success) {
-            const deletedId = action.payload.data?.id ?? action.meta.arg
-            state.listView.categorias = state.listView.categorias
-              .map((cat) => ({
-                ...cat,
-                subcategorias: cat.subcategorias.filter(
-                  (sub) => sub.id !== deletedId
-                ),
-              }))
-              .filter((cat) => cat.id !== deletedId)
-          }
         },
         rejected: (state) => {
           state.deleteCategoria.status = "error"
@@ -138,6 +149,7 @@ const adminCategoriasSlice = createAppSlice({
   }),
   selectors: {
     selectCategoriasListView: (state) => state.listView,
+    selectCategoriasQuery: (state) => state.listView.query,
     selectCreateCategoria: (state) => state.createCategoria,
     selectDeleteCategoria: (state) => state.deleteCategoria,
   },
@@ -152,6 +164,7 @@ export const {
 } = adminCategoriasSlice.actions
 export const {
   selectCategoriasListView,
+  selectCategoriasQuery,
   selectCreateCategoria,
   selectDeleteCategoria,
 } = adminCategoriasSlice.selectors

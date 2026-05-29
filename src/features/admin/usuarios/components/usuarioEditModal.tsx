@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useAppDispatch, useAppSelector } from "@/store"
 import {
   fetchUsuarios,
+  selectUsuariosQuery,
   resetUpdateUsuario,
   selectUpdateUsuario,
   updateUsuario,
@@ -23,6 +24,7 @@ interface UsuarioEditModalProps {
 export function UsuarioEditModal({ user, open, onClose }: UsuarioEditModalProps) {
   const dispatch = useAppDispatch()
   const updateState = useAppSelector(selectUpdateUsuario)
+  const listQuery = useAppSelector(selectUsuariosQuery)
 
   const form = useForm<TEditUsuarioForm>({
     resolver: zodResolver(editUsuarioSchema),
@@ -68,7 +70,7 @@ export function UsuarioEditModal({ user, open, onClose }: UsuarioEditModalProps)
     )
 
     if (updateUsuario.fulfilled.match(result) && result.payload.success) {
-      await dispatch(fetchUsuarios())
+      await dispatch(fetchUsuarios(listQuery))
       handleClose()
     }
   })

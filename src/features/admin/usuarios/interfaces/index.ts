@@ -1,3 +1,6 @@
+import type { TPaginationMeta, TPaginatedList } from "@/types/pagination"
+import type { TUsuarioEstadoFilter, TUsuarioRolFilter } from "../const"
+
 export type TUsuarioRol = "tendero" | "proveedor"
 
 export type TUsuarioEstado = "activo" | "pendiente" | "inactivo"
@@ -31,6 +34,14 @@ export type TAdminUsuarioDetalle = TAdminUsuario & {
   departamento: string | null
 }
 
+export type TFetchUsuariosParams = {
+  page: number
+  pageSize: number
+  search?: string
+  rol?: Exclude<TUsuarioRolFilter, "all">
+  estado?: Exclude<TUsuarioEstadoFilter, "all">
+}
+
 export type TPatchUsuarioBody = {
   nombre?: string
   apellido?: string
@@ -41,7 +52,7 @@ export type TPatchUsuarioBody = {
 export type IGetUsuariosAdminResponse = {
   success: boolean
   message: string
-  data?: TAdminUsuario[]
+  data?: TPaginatedList<TAdminUsuario>
 }
 
 export type IGetUsuarioDetalleResponse = {
@@ -67,3 +78,5 @@ export type IDeleteUsuarioResponse = {
   message: string
   data?: { id: string }
 }
+
+export type { TPaginationMeta }
