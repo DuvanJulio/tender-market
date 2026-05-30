@@ -38,7 +38,7 @@ export function AdminTablePagination({
         >
           Anterior
         </button>
-        <span className="min-w-[4.5rem] text-center text-sm text-muted-foreground">
+        <span className="min-w-18 text-center text-sm text-muted-foreground">
           {totalPages === 0 ? "0 / 0" : `${page} / ${totalPages}`}
         </span>
         <button
