@@ -9,6 +9,9 @@ import adminCategoriasReducer from '@/store/admin/categorias-slice'
 import adminProductosReducer from '@/store/admin/productos-slice'
 import adminUsuariosReducer from '@/store/admin/usuarios-slice'
 import adminDashboardReducer from '@/store/admin/dashboard-slice'
+import proveedorProductosReducer from '@/store/proveedor/productos-slice'
+import proveedorDashboardReducer from '@/store/proveedor/dashboard-slice'
+import proveedorPedidosReducer from '@/store/proveedor/pedidos-slice'
 import shopmanUserReducer from '@/store/shopman/user-slice'
 
 export const store = configureStore({
@@ -22,6 +25,9 @@ export const store = configureStore({
         adminProductos: adminProductosReducer,
         adminUsuarios: adminUsuariosReducer,
         adminDashboard: adminDashboardReducer,
+        proveedorProductos: proveedorProductosReducer,
+        proveedorDashboard: proveedorDashboardReducer,
+        proveedorPedidos: proveedorPedidosReducer,
         shopmanUser: shopmanUserReducer,
     },
 
