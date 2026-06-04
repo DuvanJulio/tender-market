@@ -1,66 +1,73 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   ChevronDown,
   Grid2X2,
   Heart,
   List,
+  Loader2,
+  Package,
   ShoppingCart,
-  Star,
 } from "lucide-react"
+import { toast } from "sonner"
+import { useAppDispatch, useAppSelector } from "@/store"
+import {
+  fetchCatalogo,
+  selectShopmanCatalogView,
+} from "@/store/shopman/catalog-slice"
+import {
+  addCartItem,
+  hydrateCart,
+  selectShopmanCartHydrated,
+  selectShopmanCartItems,
+} from "@/store/shopman/cart-slice"
 import { useShopmanSearch } from "../../components/shopmanLayout"
 import { formatShopmanCurrency } from "../../const"
-import {
-  CATALOG_BADGE_STYLES,
-  CATALOG_MOCK,
-  CATALOG_SORT_OPTIONS,
-} from "../const"
+import { CATALOG_BADGE_STYLES, CATALOG_SORT_OPTIONS } from "../const"
 import type { TCatalogSortOption, TCatalogViewMode } from "../interfaces"
 
-const normalizeText = (value: string) => value.toLowerCase()
-
 export function CatalogView() {
+  const dispatch = useAppDispatch()
   const { searchTerm } = useShopmanSearch()
-  const { categories, products } = CATALOG_MOCK
+  const { status, message, catalog } = useAppSelector(selectShopmanCatalogView)
+  const cartItems = useAppSelector(selectShopmanCartItems)
+  const cartHydrated = useAppSelector(selectShopmanCartHydrated)
+  const { categories, products } = catalog
+
   const [activeCategory, setActiveCategory] = useState("all")
   const [sortOption, setSortOption] = useState<TCatalogSortOption>(
     CATALOG_SORT_OPTIONS[0]
   )
   const [viewMode, setViewMode] = useState<TCatalogViewMode>("grid")
   const [favorites, setFavorites] = useState<string[]>([])
-  const [addedItems, setAddedItems] = useState<string[]>([])
 
-  const categoryLookup = useMemo(
-    () =>
-      categories.reduce<Record<string, string>>((acc, category) => {
-        acc[category.id] = category.label
-        return acc
-      }, {}),
-    [categories]
+  useEffect(() => {
+    if (!cartHydrated) dispatch(hydrateCart())
+  }, [cartHydrated, dispatch])
+
+  const loadCatalogo = useCallback(
+    (search: string, categoryId: string) => {
+      dispatch(
+        fetchCatalogo({
+          search: search.trim() || undefined,
+          categoria_id:
+            categoryId === "all" ? undefined : Number(categoryId),
+        })
+      )
+    },
+    [dispatch]
   )
 
-  const activeCategoryLabel =
-    activeCategory === "all" ? null : categoryLookup[activeCategory]
-
-  const filteredProducts = useMemo(() => {
-    const term = normalizeText(searchTerm.trim())
-
-    return products.filter((product) => {
-      const matchesCategory =
-        !activeCategoryLabel || product.category === activeCategoryLabel
-      const matchesSearch =
-        !term ||
-        [product.name, product.brand, product.category].some((value) =>
-          normalizeText(value).includes(term)
-        )
-
-      return matchesCategory && matchesSearch
-    })
-  }, [products, activeCategoryLabel, searchTerm])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadCatalogo(searchTerm, activeCategory)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchTerm, activeCategory, loadCatalogo])
 
   const sortedProducts = useMemo(() => {
-    const sorted = [...filteredProducts]
+    const sorted = [...products]
 
     if (sortOption === "Precio: menor a mayor") {
       sorted.sort((a, b) => a.price - b.price)
@@ -73,19 +80,16 @@ export function CatalogView() {
     }
 
     if (sortOption === "Nuevos") {
-      sorted.sort((a, b) => {
-        const aIsNew = a.badges?.some((badge) => badge.label === "Nuevo")
-        const bIsNew = b.badges?.some((badge) => badge.label === "Nuevo")
-        if (aIsNew && !bIsNew) return -1
-        if (!aIsNew && bIsNew) return 1
-        return b.reviews - a.reviews
-      })
+      sorted.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
       return sorted
     }
 
-    sorted.sort((a, b) => b.reviews - a.reviews)
+    sorted.sort((a, b) => b.stock - a.stock)
     return sorted
-  }, [filteredProducts, sortOption])
+  }, [products, sortOption])
 
   const handleToggleFavorite = (id: string) => {
     setFavorites((prev) =>
@@ -93,13 +97,28 @@ export function CatalogView() {
     )
   }
 
-  const handleToggleCart = (id: string) => {
-    setAddedItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+  const handleAddToCart = (product: (typeof products)[number]) => {
+    if (product.stock <= 0) return
+
+    dispatch(
+      addCartItem({
+        productoId: product.productoId,
+        proveedorId: product.proveedorId,
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        unitPrice: product.price,
+        stock: product.stock,
+        imagen_url: product.imagen_url,
+        quantity: 1,
+      })
     )
+    toast.success(`${product.name} agregado al carrito`)
   }
 
+  const isLoading = status === "loading"
   const hasResults = sortedProducts.length > 0
+  const cartProductIds = new Set(cartItems.map((item) => item.productoId))
 
   return (
     <>
@@ -111,6 +130,12 @@ export function CatalogView() {
           Encuentra los mejores productos mayoristas para tu negocio
         </p>
       </div>
+
+      {status === "error" && message ? (
+        <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {message}
+        </div>
+      ) : null}
 
       <section className="mt-6 flex flex-col gap-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -189,116 +214,132 @@ export function CatalogView() {
         </div>
       </section>
 
-      <section
-        className={`mt-6 grid gap-6 ${
-          viewMode === "grid"
-            ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            : "grid-cols-1"
-        }`}
-      >
-        {!hasResults ? (
-          <div className="col-span-full rounded-2xl border border-border bg-background p-6 text-center text-sm text-muted-foreground">
-            No hay resultados para los filtros actuales.
-          </div>
-        ) : null}
-        {sortedProducts.map((product) => {
-          const isFavorite = favorites.includes(product.id)
-          const isAdded = addedItems.includes(product.id)
+      {isLoading ? (
+        <div className="mt-12 flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <section
+          className={`mt-6 grid gap-6 ${
+            viewMode === "grid"
+              ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              : "grid-cols-1"
+          }`}
+        >
+          {!hasResults ? (
+            <div className="col-span-full rounded-2xl border border-border bg-background p-6 text-center text-sm text-muted-foreground">
+              No hay productos publicados que coincidan con los filtros.
+            </div>
+          ) : null}
+          {sortedProducts.map((product) => {
+            const isFavorite = favorites.includes(product.id)
+            const isAdded = cartProductIds.has(product.productoId)
+            const outOfStock = product.stock <= 0
 
-          return (
-            <article
-              key={product.id}
-              className={`flex rounded-2xl border border-border bg-background p-4 shadow-sm ${
-                viewMode === "grid" ? "h-full flex-col" : "flex-col sm:flex-row"
-              }`}
-            >
-              <div
-                className={`relative flex items-center justify-center rounded-xl bg-muted/60 ${
-                  viewMode === "grid" ? "h-40" : "h-32 w-full sm:h-32 sm:w-44"
+            return (
+              <article
+                key={product.id}
+                className={`flex rounded-2xl border border-border bg-background p-4 shadow-sm ${
+                  viewMode === "grid" ? "h-full flex-col" : "flex-col sm:flex-row"
                 }`}
               >
-                <div className="absolute left-3 top-3 flex flex-col gap-1">
-                  {product.badges?.map((badge) => (
+                <div
+                  className={`relative flex items-center justify-center overflow-hidden rounded-xl bg-muted/60 ${
+                    viewMode === "grid"
+                      ? "h-40"
+                      : "h-32 w-full sm:h-32 sm:w-44"
+                  }`}
+                >
+                  <div className="absolute left-3 top-3 flex flex-col gap-1">
+                    {product.badges?.map((badge) => (
+                      <span
+                        key={badge.label}
+                        className={`rounded-md px-2 py-1 text-[11px] font-semibold ${CATALOG_BADGE_STYLES[badge.tone]}`}
+                      >
+                        {badge.label}
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFavorite(product.id)}
+                    className={`absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background ${
+                      isFavorite ? "text-rose-500" : "text-muted-foreground"
+                    }`}
+                    aria-label="Guardar"
+                    aria-pressed={isFavorite}
+                  >
+                    <Heart
+                      className={`h-4 w-4 ${isFavorite ? "fill-rose-500" : ""}`}
+                    />
+                  </button>
+                  {product.imagen_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={product.imagen_url}
+                      alt={product.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Package className="h-10 w-10 text-muted-foreground/40" />
+                  )}
+                </div>
+
+                <div
+                  className={`flex flex-1 flex-col ${
+                    viewMode === "grid" ? "mt-4" : "mt-4 sm:ml-6 sm:mt-0"
+                  }`}
+                >
+                  <p className="text-xs text-muted-foreground">
+                    {product.brand}{" "}
+                    <span className="mx-1">&bull;</span> {product.category}
+                  </p>
+                  <h3 className="mt-2 text-sm font-semibold text-foreground">
+                    {product.name}
+                  </h3>
+
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className="text-lg font-semibold text-primary">
+                      {formatShopmanCurrency(product.price)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      precio mayorista
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Proveedor: {product.brand}</span>
                     <span
-                      key={badge.label}
-                      className={`rounded-md px-2 py-1 text-[11px] font-semibold ${CATALOG_BADGE_STYLES[badge.tone]}`}
+                      className={`font-semibold ${
+                        outOfStock ? "text-destructive" : "text-emerald-600"
+                      }`}
                     >
-                      {badge.label}
+                      Stock: {product.stock}
                     </span>
-                  ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAddToCart(product)}
+                    disabled={outOfStock}
+                    aria-pressed={isAdded}
+                    className={`mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 ${
+                      isAdded ? "bg-emerald-600" : "bg-primary"
+                    }`}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    {outOfStock
+                      ? "Sin stock"
+                      : isAdded
+                        ? "Agregar más"
+                        : "Agregar al carrito"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggleFavorite(product.id)}
-                  className={`absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background ${
-                    isFavorite ? "text-rose-500" : "text-muted-foreground"
-                  }`}
-                  aria-label="Guardar"
-                  aria-pressed={isFavorite}
-                >
-                  <Heart
-                    className={`h-4 w-4 ${isFavorite ? "fill-rose-500" : ""}`}
-                  />
-                </button>
-                <ShoppingCart className="h-10 w-10 text-muted-foreground/40" />
-              </div>
-
-              <div
-                className={`flex flex-1 flex-col ${
-                  viewMode === "grid" ? "mt-4" : "mt-4 sm:ml-6 sm:mt-0"
-                }`}
-              >
-                <p className="text-xs text-muted-foreground">
-                  {product.brand}{" "}
-                  <span className="mx-1">&bull;</span> {product.category}
-                </p>
-                <h3 className="mt-2 text-sm font-semibold text-foreground">
-                  {product.name}
-                </h3>
-
-                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  <span className="font-semibold text-foreground">
-                    {product.rating.toFixed(1)}
-                  </span>
-                  <span>({product.reviews})</span>
-                </div>
-
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-lg font-semibold text-primary">
-                    {formatShopmanCurrency(product.price)}
-                  </span>
-                  {product.oldPrice ? (
-                    <span className="text-xs text-muted-foreground line-through">
-                      {formatShopmanCurrency(product.oldPrice)}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="text-xs text-muted-foreground">{product.unitLabel}</p>
-
-                <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{product.minOrderLabel}</span>
-                  <span className="font-semibold text-emerald-600">
-                    Stock: {product.stock}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleToggleCart(product.id)}
-                  aria-pressed={isAdded}
-                  className={`mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold text-primary-foreground ${
-                    isAdded ? "bg-emerald-600" : "bg-primary"
-                  }`}
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  {isAdded ? "Agregado" : "Agregar al carrito"}
-                </button>
-              </div>
-            </article>
-          )
-        })}
-      </section>
+              </article>
+            )
+          })}
+        </section>
+      )}
     </>
   )
 }

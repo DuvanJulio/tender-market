@@ -28,3 +28,5 @@ export const HISTORY_STATUS_CONFIG: Record<
     note: "text-red-600",
   },
 }
+
+export const HISTORY_FILTERS = ["Todos", "Entregado", "Cancelado"] as const

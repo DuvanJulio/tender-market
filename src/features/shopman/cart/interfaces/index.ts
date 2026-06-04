@@ -1,14 +1,13 @@
 export type TCartItem = {
+  productoId: number
+  proveedorId: number
   id: string
   name: string
   brand: string
   quantity: number
   unitPrice: number
-  oldUnitPrice?: number
-  unitLabel: string
+  stock: number
+  imagen_url: string | null
 }
 
-export type TCartData = {
-  items: TCartItem[]
-  couponHint: string
-}
+export const SHOPMAN_CART_STORAGE_KEY = "shopman_cart"
