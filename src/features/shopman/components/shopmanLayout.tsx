@@ -17,7 +17,11 @@ import {
   fetchShopmanUser,
   selectShopmanProfileView,
 } from "@/store/shopman/user-slice"
-import { SHOPMAN_DEFAULT_CART_BADGE, SHOPMAN_NAV_ITEMS } from "../const"
+import {
+  hydrateCart,
+  selectShopmanCartTotalItems,
+} from "@/store/shopman/cart-slice"
+import { SHOPMAN_NAV_ITEMS } from "../const"
 import { ShopmanUserMenu } from "./shopmanUserMenu"
 
 type ShopmanSearchContextValue = {
@@ -29,26 +33,12 @@ const ShopmanSearchContext = createContext<ShopmanSearchContextValue | null>(
   null
 )
 
-const ShopmanCartBadgeContext = createContext<
-  ((count: number | null) => void) | null
->(null)
-
 export function useShopmanSearch() {
   const context = useContext(ShopmanSearchContext)
   if (!context) {
     throw new Error("useShopmanSearch debe usarse dentro de ShopmanLayout")
   }
   return context
-}
-
-export function useShopmanCartBadge(itemsCount: number) {
-  const setCartBadgeOverride = useContext(ShopmanCartBadgeContext)
-
-  useEffect(() => {
-    if (!setCartBadgeOverride) return
-    setCartBadgeOverride(itemsCount)
-    return () => setCartBadgeOverride(null)
-  }, [itemsCount, setCartBadgeOverride])
 }
 
 function isNavActive(pathname: string, href: string) {
@@ -64,10 +54,13 @@ export function ShopmanLayout({ children }: ShopmanLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const profileView = useAppSelector(selectShopmanProfileView)
+  const cartBadgeCount = useAppSelector(selectShopmanCartTotalItems)
   const [searchTerm, setSearchTerm] = useState("")
-  const [cartBadgeOverride, setCartBadgeOverride] = useState<number | null>(null)
-  const cartBadgeCount = cartBadgeOverride ?? SHOPMAN_DEFAULT_CART_BADGE
   const isCatalog = pathname.startsWith("/shopman/catalog")
+
+  useEffect(() => {
+    dispatch(hydrateCart())
+  }, [dispatch])
 
   useEffect(() => {
     const token = getAuthToken()
@@ -98,7 +91,6 @@ export function ShopmanLayout({ children }: ShopmanLayoutProps) {
 
   return (
     <ShopmanSearchContext.Provider value={searchContext}>
-      <ShopmanCartBadgeContext.Provider value={setCartBadgeOverride}>
       <div className="min-h-screen bg-muted/40">
         <header className="sticky top-0 z-40 border-b border-border bg-background">
           <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
@@ -148,7 +140,9 @@ export function ShopmanLayout({ children }: ShopmanLayoutProps) {
                 const Icon = item.icon
                 const isActive = isNavActive(pathname, item.href)
                 const badge =
-                  item.id === "cart" ? cartBadgeCount : undefined
+                  item.id === "cart" && cartBadgeCount > 0
+                    ? cartBadgeCount
+                    : undefined
                 const className = `relative flex items-center gap-2 border-b-2 pb-2 text-sm font-medium transition-colors ${
                   isActive
                     ? "border-primary text-primary"
@@ -180,7 +174,6 @@ export function ShopmanLayout({ children }: ShopmanLayoutProps) {
           {children}
         </main>
       </div>
-      </ShopmanCartBadgeContext.Provider>
     </ShopmanSearchContext.Provider>
   )
 }

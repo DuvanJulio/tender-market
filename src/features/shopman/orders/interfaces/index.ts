@@ -1,4 +1,9 @@
-export type TOrderStatus = "entregado" | "en-camino" | "procesando" | "cancelado"
+export type TOrderStatus =
+  | "pendiente"
+  | "entregado"
+  | "en-camino"
+  | "procesando"
+  | "cancelado"
 
 export type TOrder = {
   id: string
@@ -10,6 +15,9 @@ export type TOrder = {
   products: string[]
   note: string
   canRepeat?: boolean
+  address?: string
+  contact?: string
+  supplierPhone?: string
 }
 
 export type TOrdersData = {

@@ -1,80 +1,136 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   ArrowRight,
-  Minus,
-  Plus,
-  ShoppingCart,
+  Loader2,
+  MapPin,
+  Package,
+  Phone,
   Trash2,
+  User,
 } from "lucide-react"
-import { formatShopmanCurrency } from "../../const"
-import { useShopmanCartBadge } from "../../components/shopmanLayout"
+import { toast } from "sonner"
+import { useAppDispatch, useAppSelector } from "@/store"
 import {
-  CART_COUPON_CODE,
-  CART_COUPON_DISCOUNT,
-  CART_MOCK,
-} from "../const"
-import type { TCartItem } from "../interfaces"
+  clearCart,
+  hydrateCart,
+  removeCartItem,
+  selectShopmanCartHydrated,
+  selectShopmanCartItems,
+  selectShopmanCartSubtotal,
+  selectShopmanCartTotalItems,
+} from "@/store/shopman/cart-slice"
+import {
+  createPedido,
+  fetchCheckout,
+  resetCreatePedido,
+  selectShopmanCheckoutView,
+  selectShopmanCreatePedido,
+} from "@/store/shopman/pedidos-slice"
+import { formatShopmanCurrency } from "../../const"
+import { CartItemQuantity } from "./cartItemQuantity"
 
 export function CartView() {
-  const [items, setItems] = useState<TCartItem[]>(CART_MOCK.items)
-  const [couponCode, setCouponCode] = useState("")
-  const [couponApplied, setCouponApplied] = useState(false)
-  const [couponError, setCouponError] = useState<string | null>(null)
+  const dispatch = useAppDispatch()
+  const router = useRouter()
+  const items = useAppSelector(selectShopmanCartItems)
+  const subtotal = useAppSelector(selectShopmanCartSubtotal)
+  const totalItems = useAppSelector(selectShopmanCartTotalItems)
+  const hydrated = useAppSelector(selectShopmanCartHydrated)
+  const checkout = useAppSelector(selectShopmanCheckoutView)
+  const createState = useAppSelector(selectShopmanCreatePedido)
 
-  useShopmanCartBadge(items.length)
+  const [showCheckout, setShowCheckout] = useState(false)
 
-  const { totalItems, subtotal, savings, couponDiscount, total } = useMemo(() => {
-    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
-    const subtotal = items.reduce(
-      (acc, item) => acc + item.quantity * item.unitPrice,
-      0
-    )
-    const oldTotal = items.reduce(
-      (acc, item) => acc + item.quantity * (item.oldUnitPrice ?? item.unitPrice),
-      0
-    )
-    const savings = Math.max(0, oldTotal - subtotal)
-    const couponDiscount = couponApplied
-      ? Math.round(subtotal * CART_COUPON_DISCOUNT)
-      : 0
-    const total = Math.max(0, subtotal - couponDiscount)
+  useEffect(() => {
+    if (!hydrated) dispatch(hydrateCart())
+  }, [hydrated, dispatch])
 
-    return { totalItems, subtotal, savings, couponDiscount, total }
-  }, [items, couponApplied])
+  useEffect(() => {
+    if (createState.status === "success" && createState.message) {
+      toast.success(createState.message)
+      dispatch(clearCart())
+      dispatch(resetCreatePedido())
+      setShowCheckout(false)
+      router.push("/shopman/orders")
+    }
+    if (createState.status === "error" && createState.message) {
+      toast.error(createState.message)
+      dispatch(resetCreatePedido())
+    }
+  }, [createState.status, createState.message, dispatch, router])
 
-  const handleUpdateQuantity = (id: string, delta: number) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item
-        const nextQuantity = Math.max(1, item.quantity + delta)
-        return { ...item, quantity: nextQuantity }
+  const isEmpty = items.length === 0
+  const isSubmitting = createState.status === "loading"
+
+  const handleOpenCheckout = () => {
+    dispatch(fetchCheckout())
+    setShowCheckout(true)
+  }
+
+  const handleConfirmOrder = () => {
+    dispatch(
+      createPedido({
+        items: items.map((item) => ({
+          producto_id: item.productoId,
+          quantity: item.quantity,
+        })),
       })
     )
   }
 
-  const handleRemoveItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id))
-  }
-
-  const handleApplyCoupon = () => {
-    const normalized = couponCode.trim().toUpperCase()
-    if (!normalized) return
-
-    if (normalized === CART_COUPON_CODE) {
-      setCouponApplied(true)
-      setCouponError(null)
-      return
+  const checkoutContent = useMemo(() => {
+    if (checkout.status === "loading") {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      )
     }
 
-    setCouponApplied(false)
-    setCouponError("Codigo de cupon invalido")
-  }
+    if (checkout.status === "error") {
+      return (
+        <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          {checkout.message}
+        </p>
+      )
+    }
 
-  const isEmpty = items.length === 0
+    if (!checkout.data) return null
+
+    return (
+      <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-4 text-sm">
+        <div className="flex items-start gap-2">
+          <MapPin className="mt-0.5 h-4 w-4 text-primary" />
+          <div>
+            <p className="font-medium text-foreground">Dirección de entrega</p>
+            <p className="text-muted-foreground">{checkout.data.direccion}</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <User className="mt-0.5 h-4 w-4 text-primary" />
+          <div>
+            <p className="font-medium text-foreground">Contacto</p>
+            <p className="text-muted-foreground">{checkout.data.contacto}</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <Phone className="mt-0.5 h-4 w-4 text-primary" />
+          <div>
+            <p className="font-medium text-foreground">Teléfono</p>
+            <p className="text-muted-foreground">{checkout.data.telefono}</p>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Si necesitas cambiar la dirección, contacta al administrador.
+        </p>
+      </div>
+    )
+  }, [checkout.data, checkout.message, checkout.status])
 
   return (
     <>
@@ -83,27 +139,38 @@ export function CartView() {
           Carrito de Compras
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {items.length} productos en tu carrito
+          {totalItems} unidades en tu carrito
         </p>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section className="space-y-4">
+          {isEmpty ? (
+            <div className="rounded-2xl border border-border bg-background p-8 text-center text-sm text-muted-foreground">
+              Tu carrito está vacío. Explora el catálogo para agregar productos.
+            </div>
+          ) : null}
+
           {items.map((item) => {
             const lineTotal = item.unitPrice * item.quantity
-            const lineOldTotal = item.oldUnitPrice
-              ? item.oldUnitPrice * item.quantity
-              : null
-            const isMinQuantity = item.quantity <= 1
 
             return (
               <article
-                key={item.id}
+                key={item.productoId}
                 className="rounded-2xl border border-border bg-background p-4 shadow-sm"
               >
                 <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-muted/60">
-                    <ShoppingCart className="h-8 w-8 text-muted-foreground/50" />
+                  <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-muted/60">
+                    {item.imagen_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.imagen_url}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Package className="h-8 w-8 text-muted-foreground/50" />
+                    )}
                   </div>
 
                   <div className="flex-1">
@@ -112,27 +179,17 @@ export function CartView() {
                       {item.name}
                     </h3>
 
-                    <div className="mt-3 flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateQuantity(item.id, -1)}
-                        disabled={isMinQuantity}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                        aria-label="Disminuir"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="text-sm font-semibold text-foreground">
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateQuantity(item.id, 1)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground"
-                        aria-label="Aumentar"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
+                    <div className="mt-3 flex flex-col gap-1">
+                      <CartItemQuantity
+                        productoId={item.productoId}
+                        quantity={item.quantity}
+                        stock={item.stock}
+                      />
+                      {item.quantity >= item.stock ? (
+                        <p className="text-[11px] text-amber-600">
+                          Stock máximo: {item.stock}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
@@ -140,19 +197,16 @@ export function CartView() {
                     <p className="text-base font-semibold text-primary">
                       {formatShopmanCurrency(lineTotal)}
                     </p>
-                    {lineOldTotal ? (
-                      <p className="text-xs text-muted-foreground line-through">
-                        {formatShopmanCurrency(lineOldTotal)}
-                      </p>
-                    ) : null}
                     <p className="text-xs text-muted-foreground">
-                      {formatShopmanCurrency(item.unitPrice)} / {item.unitLabel}
+                      {formatShopmanCurrency(item.unitPrice)} c/u
                     </p>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => handleRemoveItem(item.id)}
+                    onClick={() =>
+                      dispatch(removeCartItem({ productoId: item.productoId }))
+                    }
                     className="ml-auto flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground"
                     aria-label="Eliminar"
                   >
@@ -175,68 +229,18 @@ export function CartView() {
         <aside className="space-y-4">
           <div className="rounded-2xl border border-border bg-background p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-foreground">
-              Cupon de descuento
-            </h2>
-            <div className="mt-3 flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Codigo de cupon"
-                value={couponCode}
-                onChange={(event) => setCouponCode(event.target.value)}
-                className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <button
-                type="button"
-                onClick={handleApplyCoupon}
-                disabled={!couponCode.trim()}
-                className="h-10 rounded-lg border border-border px-4 text-sm font-medium text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Aplicar
-              </button>
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {CART_MOCK.couponHint}
-            </p>
-            {couponApplied ? (
-              <p className="mt-2 text-xs font-semibold text-emerald-600">
-                Cupon aplicado: {CART_COUPON_CODE} (20%)
-              </p>
-            ) : null}
-            {couponError ? (
-              <p className="mt-2 text-xs font-semibold text-red-500">
-                {couponError}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="rounded-2xl border border-border bg-background p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-foreground">
               Resumen del pedido
             </h2>
 
             <div className="mt-4 space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center justify-between">
-                <span>Subtotal ({totalItems} items)</span>
+                <span>Subtotal ({totalItems} unidades)</span>
                 <span className="font-semibold text-foreground">
                   {formatShopmanCurrency(subtotal)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-emerald-600">Ahorro en productos</span>
-                <span className="font-semibold text-emerald-600">
-                  -{formatShopmanCurrency(savings)}
-                </span>
-              </div>
-              {couponDiscount ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-600">Descuento cupon</span>
-                  <span className="font-semibold text-emerald-600">
-                    -{formatShopmanCurrency(couponDiscount)}
-                  </span>
-                </div>
-              ) : null}
-              <div className="flex items-center justify-between">
-                <span>Envio</span>
+                <span>Envío</span>
                 <span className="font-semibold text-emerald-600">Gratis</span>
               </div>
             </div>
@@ -244,13 +248,14 @@ export function CartView() {
             <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
               <span className="text-sm font-semibold text-foreground">Total</span>
               <span className="text-lg font-semibold text-primary">
-                {formatShopmanCurrency(total)}
+                {formatShopmanCurrency(subtotal)}
               </span>
             </div>
 
             <button
               type="button"
-              disabled={isEmpty}
+              disabled={isEmpty || isSubmitting}
+              onClick={handleOpenCheckout}
               className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               Realizar pedido
@@ -259,6 +264,47 @@ export function CartView() {
           </div>
         </aside>
       </div>
+
+      {showCheckout ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-foreground">
+              Confirmar pedido
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Revisa la dirección de entrega antes de confirmar.
+            </p>
+
+            <div className="mt-4">{checkoutContent}</div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowCheckout(false)}
+                disabled={isSubmitting}
+                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmOrder}
+                disabled={
+                  isSubmitting ||
+                  checkout.status !== "success" ||
+                  !checkout.data
+                }
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
+                Confirmar pedido
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   )
 }

@@ -19,5 +19,3 @@ export const SHOPMAN_NAV_ITEMS: TShopmanNavItem[] = [
   { id: "orders", href: "/shopman/orders", label: "Mis Pedidos", icon: Package },
   { id: "history", href: "/shopman/history", label: "Historial", icon: History },
 ]
-
-export const SHOPMAN_DEFAULT_CART_BADGE = 3

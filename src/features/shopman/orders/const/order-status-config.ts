@@ -1,5 +1,6 @@
 import {
   CheckCircle2,
+  Clock,
   Package,
   Truck,
   XCircle,
@@ -16,6 +17,13 @@ type TOrderStatusConfig = {
 }
 
 export const ORDER_STATUS_CONFIG: Record<TOrderStatus, TOrderStatusConfig> = {
+  pendiente: {
+    label: "Pendiente",
+    badge: "bg-yellow-100 text-yellow-800",
+    icon: Clock,
+    iconWrap: "bg-yellow-100 text-yellow-700",
+    note: "text-yellow-700",
+  },
   entregado: {
     label: "Entregado",
     badge: "bg-emerald-100 text-emerald-700",
@@ -45,3 +53,10 @@ export const ORDER_STATUS_CONFIG: Record<TOrderStatus, TOrderStatusConfig> = {
     note: "text-red-600",
   },
 }
+
+export const ORDERS_FILTERS = [
+  "Todos",
+  "Pendiente",
+  "Procesando",
+  "En camino",
+] as const

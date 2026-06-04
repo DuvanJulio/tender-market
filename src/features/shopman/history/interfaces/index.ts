@@ -9,6 +9,14 @@ export type THistoryOrder = {
   productCount: number
   products: string[]
   note: string
+  address?: string
+  contact?: string
+  rawProducts?: {
+    producto_id?: number | null
+    name: string
+    quantity: number
+    price: number
+  }[]
 }
 
 export type THistoryData = {

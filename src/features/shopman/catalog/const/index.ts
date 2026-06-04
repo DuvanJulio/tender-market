@@ -1,1 +1,1 @@
-export * from "./catalog-mock"
+export * from "./catalog-config"

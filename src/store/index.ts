@@ -13,6 +13,9 @@ import proveedorProductosReducer from '@/store/proveedor/productos-slice'
 import proveedorDashboardReducer from '@/store/proveedor/dashboard-slice'
 import proveedorPedidosReducer from '@/store/proveedor/pedidos-slice'
 import shopmanUserReducer from '@/store/shopman/user-slice'
+import shopmanCatalogReducer from '@/store/shopman/catalog-slice'
+import shopmanCartReducer from '@/store/shopman/cart-slice'
+import shopmanPedidosReducer from '@/store/shopman/pedidos-slice'
 
 export const store = configureStore({
     reducer: {
@@ -29,6 +32,9 @@ export const store = configureStore({
         proveedorDashboard: proveedorDashboardReducer,
         proveedorPedidos: proveedorPedidosReducer,
         shopmanUser: shopmanUserReducer,
+        shopmanCatalog: shopmanCatalogReducer,
+        shopmanCart: shopmanCartReducer,
+        shopmanPedidos: shopmanPedidosReducer,
     },
 
 })
