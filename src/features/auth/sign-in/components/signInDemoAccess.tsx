@@ -36,7 +36,8 @@ export function SignInDemoAccess() {
         </button>
         <button
           type="button"
-          onClick={() => router.push("/admin/dashboard")}
+          onClick={() => router.push("/sign-in")}
+          title="Inicia sesión con una cuenta administrador"
           className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card p-3 text-xs transition-colors hover:bg-muted"
         >
           <Store className="h-4 w-4 text-success" />

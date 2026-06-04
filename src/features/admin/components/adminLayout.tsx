@@ -10,8 +10,10 @@ import {
   Shield,
   X,
 } from "lucide-react"
+import { NotificationsBell } from "@/features/notifications/components"
 import { useState } from "react"
 import { ADMIN_NAV_ITEMS } from "../const"
+import { AdminDemoBanner } from "./adminDemoBanner"
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -133,7 +135,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </div>
 
-          <div className="relative">
+          <div className="flex items-center gap-2">
+            <NotificationsBell scope="admin" />
+            <div className="relative">
             <button
               type="button"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -186,9 +190,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </div>
               </>
             )}
+            </div>
           </div>
         </header>
 
+        <AdminDemoBanner />
         <main className="min-h-[calc(100vh-4rem)]">{children}</main>
       </div>
     </div>

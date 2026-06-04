@@ -81,4 +81,10 @@ export type IDeleteProveedorProductoResponse = {
   data?: { id: number }
 }
 
+export type IPostProductoImagenResponse = {
+  success: boolean
+  message: string
+  data?: { url: string; path: string }
+}
+
 export type { TPaginationMeta }

@@ -9,10 +9,12 @@ import {
   resetDeleteCity,
   selectCiudadesListView,
   selectDeleteCity,
+  selectUpdateCity,
 } from "@/store/admin/ciudades-slice"
 import { AdminPageHeader } from "@/features/admin/components"
 import type { TAdminCiudad } from "../interfaces"
 import { CiudadesCreateModal } from "./ciudadesCreateModal"
+import { CiudadesEditModal } from "./ciudadesEditModal"
 import { DepartamentoCreateModal } from "./departamentoCreateModal"
 import { CiudadCard } from "./ciudadCard"
 import { CiudadDeleteAlertDialog } from "./ciudadDeleteAlertDialog"
@@ -25,6 +27,7 @@ export function CiudadesView() {
     selectCiudadesListView
   )
   const deleteState = useAppSelector(selectDeleteCity)
+  const updateState = useAppSelector(selectUpdateCity)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<TStatusFilter>("all")
   const [showAddCityModal, setShowAddCityModal] = useState(false)
@@ -33,6 +36,7 @@ export function CiudadesView() {
     number | null
   >(null)
   const [cityToDelete, setCityToDelete] = useState<TAdminCiudad | null>(null)
+  const [cityToEdit, setCityToEdit] = useState<TAdminCiudad | null>(null)
 
   const filteredCities = useMemo(
     () =>
@@ -62,6 +66,10 @@ export function CiudadesView() {
   const isError = status === "error"
   const deleteError =
     deleteState.status === "error" ? deleteState.message : null
+
+  const handleEditRequest = (city: TAdminCiudad) => {
+    setCityToEdit(city)
+  }
 
   const handleDeleteRequest = (city: TAdminCiudad) => {
     dispatch(resetDeleteCity())
@@ -227,10 +235,15 @@ export function CiudadesView() {
             <CiudadCard
               key={city.id}
               city={city}
+              isEditing={
+                updateState.status === "loading" &&
+                updateState.cityId === city.id
+              }
               isDeleting={
                 deleteState.status === "loading" &&
                 deleteState.cityId === city.id
               }
+              onEdit={handleEditRequest}
               onDelete={handleDeleteRequest}
             />
           ))}
@@ -260,6 +273,11 @@ export function CiudadesView() {
           setPreselectedDepartamentoId(null)
         }}
         preselectedDepartamentoId={preselectedDepartamentoId}
+      />
+      <CiudadesEditModal
+        open={!!cityToEdit}
+        city={cityToEdit}
+        onClose={() => setCityToEdit(null)}
       />
     </div>
   )

@@ -5,9 +5,11 @@ import {
   apiDeleteCityAction,
   apiGetAdminCiudadesAction,
   apiGetDepartmentsAction,
+  apiPatchCityAction,
   apiPostCityAction,
   apiPostDepartmentAction,
 } from "@/features/admin/ciudades/action"
+import type { TPatchCityBody } from "@/features/masters/interfaces"
 import type {
   TAdminCiudad,
   TAdminCiudadesSummary,
@@ -39,6 +41,11 @@ type TAdminCiudadesState = {
     message: string | undefined
     cityId: number | null
   }
+  updateCity: {
+    status: TStatus
+    message: string | undefined
+    cityId: number | null
+  }
 }
 
 const initialState: TAdminCiudadesState = {
@@ -62,6 +69,11 @@ const initialState: TAdminCiudadesState = {
     message: undefined,
   },
   deleteCity: {
+    status: "idle",
+    message: undefined,
+    cityId: null,
+  },
+  updateCity: {
     status: "idle",
     message: undefined,
     cityId: null,
@@ -219,6 +231,56 @@ const adminCiudadesSlice = createAppSlice({
       state.deleteCity.message = undefined
       state.deleteCity.cityId = null
     }),
+    updateCity: create.asyncThunk(
+      async (payload: { cityId: number; body: TPatchCityBody }) =>
+        apiPatchCityAction(payload.cityId, payload.body),
+      {
+        pending: (state, action) => {
+          state.updateCity.status = "loading"
+          state.updateCity.message = undefined
+          state.updateCity.cityId = action.meta.arg.cityId
+        },
+        fulfilled: (state, action) => {
+          state.updateCity.status = action.payload.success ? "success" : "error"
+          state.updateCity.message = action.payload.message
+          state.updateCity.cityId = null
+
+          if (action.payload.success && action.payload.data) {
+            const updated = action.payload.data
+            const index = state.listView.ciudades.findIndex(
+              (c) => c.id === updated.id
+            )
+            if (index >= 0) {
+              const prev = state.listView.ciudades[index]
+              state.listView.ciudades[index] = {
+                ...prev,
+                nombre: updated.nombre,
+                departamento_id: updated.departamento_id ?? prev.departamento_id,
+                departamento: updated.departamento ?? prev.departamento,
+                estado: updated.estado ?? prev.estado,
+              }
+            }
+            if (state.listView.summary) {
+              state.listView.summary = {
+                ...state.listView.summary,
+                ciudadesActivas: state.listView.ciudades.filter((c) => c.estado)
+                  .length,
+              }
+            }
+          }
+        },
+        rejected: (state) => {
+          state.updateCity.status = "error"
+          state.updateCity.message = "No se pudo actualizar la ciudad"
+          state.updateCity.cityId = null
+        },
+      }
+    ),
+    resetUpdateCity: create.reducer((state) => {
+      state.updateCity.status = "idle"
+      state.updateCity.message = undefined
+      state.updateCity.cityId = null
+    }),
   }),
   selectors: {
     selectCiudadesListView: (state) => state.listView,
@@ -226,6 +288,7 @@ const adminCiudadesSlice = createAppSlice({
     selectCreateDepartment: (state) => state.createDepartment,
     selectCreateCity: (state) => state.createCity,
     selectDeleteCity: (state) => state.deleteCity,
+    selectUpdateCity: (state) => state.updateCity,
   },
 })
 
@@ -238,6 +301,8 @@ export const {
   resetCreateDepartment,
   resetCreateCity,
   resetDeleteCity,
+  updateCity,
+  resetUpdateCity,
 } = adminCiudadesSlice.actions
 export const {
   selectCiudadesListView,
@@ -245,5 +310,6 @@ export const {
   selectCreateDepartment,
   selectCreateCity,
   selectDeleteCity,
+  selectUpdateCity,
 } = adminCiudadesSlice.selectors
 export default adminCiudadesSlice.reducer

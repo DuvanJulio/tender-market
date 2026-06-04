@@ -33,6 +33,7 @@ import {
 import { ProductosStatsCards } from "./productosStatsCards"
 import { ProductoRowActions } from "./productoRowActions"
 import { ProductoDeleteAlertDialog } from "./productoDeleteAlertDialog"
+import { ProductoDetailModal } from "./productoDetailModal"
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-CO", {
@@ -70,6 +71,7 @@ export function ProductosView() {
   const [productoToDelete, setProductoToDelete] = useState<TAdminProducto | null>(
     null
   )
+  const [productoToView, setProductoToView] = useState<TAdminProducto | null>(null)
 
   const loadProductos = useCallback(() => {
     dispatch(
@@ -106,6 +108,23 @@ export function ProductosView() {
     dispatch(resetModerateProducto())
     const result = await dispatch(
       moderateProducto({ productoId: producto.id, estado: "inactivo" })
+    )
+    if (moderateProducto.fulfilled.match(result) && result.payload.success) {
+      await dispatch(fetchProductos(listQuery))
+    }
+  }
+
+  const handleToggleEstado = async (producto: TAdminProducto) => {
+    if (producto.estado !== "publicado" && producto.estado !== "inactivo") {
+      return
+    }
+
+    const nextEstado =
+      producto.estado === "publicado" ? "inactivo" : "publicado"
+
+    dispatch(resetModerateProducto())
+    const result = await dispatch(
+      moderateProducto({ productoId: producto.id, estado: nextEstado })
     )
     if (moderateProducto.fulfilled.match(result) && result.payload.success) {
       await dispatch(fetchProductos(listQuery))
@@ -282,17 +301,35 @@ export function ProductosView() {
                           </span>
                         </TableCell>
                         <TableCell className="p-4 whitespace-normal">
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-medium ${estadoConfig.color}`}
-                          >
-                            {estadoConfig.label}
-                          </span>
+                          {producto.estado === "publicado" ||
+                          producto.estado === "inactivo" ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleEstado(producto)}
+                              disabled={isModerating}
+                              title={
+                                producto.estado === "publicado"
+                                  ? "Clic para marcar inactivo"
+                                  : "Clic para marcar activo"
+                              }
+                              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-50 ${estadoConfig.color}`}
+                            >
+                              {isModerating ? "..." : estadoConfig.label}
+                            </button>
+                          ) : (
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-medium ${estadoConfig.color}`}
+                            >
+                              {estadoConfig.label}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="p-4 text-right whitespace-normal">
                           <ProductoRowActions
                             producto={producto}
                             isModerating={isModerating}
                             isDeleting={isDeleting}
+                            onView={() => setProductoToView(producto)}
                             onApprove={() => handleApprove(producto)}
                             onReject={() => handleReject(producto)}
                             onDelete={() => handleDeleteRequest(producto)}
@@ -314,6 +351,12 @@ export function ProductosView() {
           </>
         )}
       </div>
+
+      <ProductoDetailModal
+        open={productoToView != null}
+        producto={productoToView}
+        onClose={() => setProductoToView(null)}
+      />
 
       <ProductoDeleteAlertDialog
         producto={productoToDelete}

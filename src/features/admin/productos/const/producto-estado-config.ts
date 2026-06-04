@@ -15,7 +15,7 @@ export const PRODUCTO_ESTADO_CONFIG: Record<
     color: "bg-warning/15 text-warning",
   },
   inactivo: {
-    label: "Rechazado",
+    label: "Inactivo",
     color: "bg-destructive/15 text-destructive",
   },
 }
@@ -27,5 +27,5 @@ export const PRODUCTO_ESTADO_FILTER_OPTIONS: {
   { value: "all", label: "Todos los estados" },
   { value: "publicado", label: "Activos" },
   { value: "borrador", label: "Pendientes" },
-  { value: "inactivo", label: "Rechazados" },
+  { value: "inactivo", label: "Inactivos" },
 ]

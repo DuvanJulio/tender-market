@@ -4,11 +4,13 @@ import { DEFAULT_PAGE_SIZE, type TPaginationMeta } from "@/types/pagination"
 import {
   apiDeleteCategoriaAction,
   apiGetCategoriasAction,
+  apiPatchCategoriaAction,
   apiPostCategoriaAction,
 } from "@/features/admin/categorias/action"
 import type {
   TCategoria,
   TFetchCategoriasParams,
+  TPatchCategoriaBody,
   TPostCategoriaBody,
 } from "@/features/admin/categorias/interfaces"
 
@@ -36,6 +38,11 @@ type TAdminCategoriasState = {
     message: string | undefined
     categoriaId: number | null
   }
+  updateCategoria: {
+    status: TStatus
+    message: string | undefined
+    categoriaId: number | null
+  }
 }
 
 const initialQuery: TFetchCategoriasParams = {
@@ -56,6 +63,11 @@ const initialState: TAdminCategoriasState = {
     message: undefined,
   },
   deleteCategoria: {
+    status: "idle",
+    message: undefined,
+    categoriaId: null,
+  },
+  updateCategoria: {
     status: "idle",
     message: undefined,
     categoriaId: null,
@@ -146,12 +158,41 @@ const adminCategoriasSlice = createAppSlice({
       state.deleteCategoria.message = undefined
       state.deleteCategoria.categoriaId = null
     }),
+    updateCategoria: create.asyncThunk(
+      async (payload: { categoriaId: number; body: TPatchCategoriaBody }) =>
+        apiPatchCategoriaAction(payload.categoriaId, payload.body),
+      {
+        pending: (state, action) => {
+          state.updateCategoria.status = "loading"
+          state.updateCategoria.message = undefined
+          state.updateCategoria.categoriaId = action.meta.arg.categoriaId
+        },
+        fulfilled: (state, action) => {
+          state.updateCategoria.status = action.payload.success
+            ? "success"
+            : "error"
+          state.updateCategoria.message = action.payload.message
+          state.updateCategoria.categoriaId = null
+        },
+        rejected: (state) => {
+          state.updateCategoria.status = "error"
+          state.updateCategoria.message = "No se pudo actualizar la categoría"
+          state.updateCategoria.categoriaId = null
+        },
+      }
+    ),
+    resetUpdateCategoria: create.reducer((state) => {
+      state.updateCategoria.status = "idle"
+      state.updateCategoria.message = undefined
+      state.updateCategoria.categoriaId = null
+    }),
   }),
   selectors: {
     selectCategoriasListView: (state) => state.listView,
     selectCategoriasQuery: (state) => state.listView.query,
     selectCreateCategoria: (state) => state.createCategoria,
     selectDeleteCategoria: (state) => state.deleteCategoria,
+    selectUpdateCategoria: (state) => state.updateCategoria,
   },
 })
 
@@ -161,11 +202,14 @@ export const {
   deleteCategoria,
   resetCreateCategoria,
   resetDeleteCategoria,
+  updateCategoria,
+  resetUpdateCategoria,
 } = adminCategoriasSlice.actions
 export const {
   selectCategoriasListView,
   selectCategoriasQuery,
   selectCreateCategoria,
   selectDeleteCategoria,
+  selectUpdateCategoria,
 } = adminCategoriasSlice.selectors
 export default adminCategoriasSlice.reducer

@@ -16,6 +16,7 @@ import shopmanUserReducer from '@/store/shopman/user-slice'
 import shopmanCatalogReducer from '@/store/shopman/catalog-slice'
 import shopmanCartReducer from '@/store/shopman/cart-slice'
 import shopmanPedidosReducer from '@/store/shopman/pedidos-slice'
+import notificationsReducer from '@/store/notifications-slice'
 
 export const store = configureStore({
     reducer: {
@@ -35,6 +36,7 @@ export const store = configureStore({
         shopmanCatalog: shopmanCatalogReducer,
         shopmanCart: shopmanCartReducer,
         shopmanPedidos: shopmanPedidosReducer,
+        notifications: notificationsReducer,
     },
 
 })
