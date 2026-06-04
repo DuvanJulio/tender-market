@@ -19,12 +19,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { TCategoria, TDeleteCategoriaTarget } from "../interfaces"
+import type {
+  TCategoria,
+  TDeleteCategoriaTarget,
+  TEditCategoriaTarget,
+} from "../interfaces"
 
 interface CategoriasListProps {
   categories: TCategoria[]
   isLoading?: boolean
   deletingId: number | null
+  editingId: number | null
+  onEdit: (target: TEditCategoriaTarget) => void
   onDelete: (target: TDeleteCategoriaTarget) => void
   onAddSubcategoria: (parentId: number) => void
 }
@@ -33,6 +39,8 @@ export function CategoriasList({
   categories,
   isLoading = false,
   deletingId,
+  editingId,
+  onEdit,
   onDelete,
   onAddSubcategoria,
 }: CategoriasListProps) {
@@ -122,11 +130,26 @@ export function CategoriasList({
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        onClick={() =>
+                          onEdit({
+                            id: category.id,
+                            nombre: category.nombre,
+                            slug: category.slug,
+                            estado: category.estado,
+                            esSubcategoria: false,
+                          })
+                        }
+                        disabled={
+                          editingId === category.id || deletingId === category.id
+                        }
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
                         aria-label="Editar categoría"
-                        disabled
                       >
-                        <Edit className="h-4 w-4" />
+                        {editingId === category.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Edit className="h-4 w-4" />
+                        )}
                       </button>
                       <button
                         type="button"
@@ -137,7 +160,9 @@ export function CategoriasList({
                             esSubcategoria: false,
                           })
                         }
-                        disabled={deletingId === category.id}
+                        disabled={
+                          deletingId === category.id || editingId === category.id
+                        }
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
                         aria-label="Eliminar categoría"
                       >
@@ -173,11 +198,26 @@ export function CategoriasList({
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
-                            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            onClick={() =>
+                              onEdit({
+                                id: sub.id,
+                                nombre: sub.nombre,
+                                slug: sub.slug,
+                                estado: sub.estado,
+                                esSubcategoria: true,
+                              })
+                            }
+                            disabled={
+                              editingId === sub.id || deletingId === sub.id
+                            }
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
                             aria-label="Editar subcategoría"
-                            disabled
                           >
-                            <Edit className="h-3.5 w-3.5" />
+                            {editingId === sub.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Edit className="h-3.5 w-3.5" />
+                            )}
                           </button>
                           <button
                             type="button"
@@ -188,7 +228,9 @@ export function CategoriasList({
                                 esSubcategoria: true,
                               })
                             }
-                            disabled={deletingId === sub.id}
+                            disabled={
+                              deletingId === sub.id || editingId === sub.id
+                            }
                             className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
                             aria-label="Eliminar subcategoría"
                           >

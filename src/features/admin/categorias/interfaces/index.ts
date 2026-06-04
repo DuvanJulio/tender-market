@@ -3,7 +3,9 @@ import type { TPaginationMeta, TPaginatedList } from "@/types/pagination"
 export type TCategoriaSub = {
   id: number
   nombre: string
+  slug: string
   productos: number
+  estado: boolean
 }
 
 export type TCategoria = {
@@ -55,6 +57,32 @@ export type TDeleteCategoriaTarget = {
   id: number
   nombre: string
   esSubcategoria: boolean
+}
+
+export type TEditCategoriaTarget = {
+  id: number
+  nombre: string
+  slug: string
+  estado: boolean
+  esSubcategoria: boolean
+}
+
+export type TPatchCategoriaBody = {
+  nombre?: string
+  slug?: string
+  estado?: boolean
+}
+
+export type IPatchCategoriaResponse = {
+  success: boolean
+  message: string
+  data?: {
+    id: number
+    nombre: string
+    slug: string
+    categoria_padre_id: number | null
+    estado: boolean
+  }
 }
 
 export type { TPaginationMeta }

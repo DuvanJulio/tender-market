@@ -29,6 +29,7 @@ function mergeCiudades(
     return {
       id: city.id,
       nombre: city.nombre,
+      departamento_id: city.departamento_id ?? null,
       departamento: city.departamento ?? null,
       estado: city.estado ?? true,
       tenderos: cityStats?.tenderos ?? 0,

@@ -7,6 +7,7 @@ interface ProductoRowActionsProps {
   producto: TAdminProducto
   isModerating: boolean
   isDeleting: boolean
+  onView: () => void
   onApprove: () => void
   onReject: () => void
   onDelete: () => void
@@ -16,6 +17,7 @@ export function ProductoRowActions({
   producto,
   isModerating,
   isDeleting,
+  onView,
   onApprove,
   onReject,
   onDelete,
@@ -27,10 +29,11 @@ export function ProductoRowActions({
     <div className="flex items-center justify-end gap-1">
       <button
         type="button"
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        onClick={onView}
+        disabled={busy}
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
         aria-label="Ver producto"
-        title="Ver detalle (próximamente)"
-        disabled
+        title="Ver detalle"
       >
         <Eye className="h-4 w-4" />
       </button>

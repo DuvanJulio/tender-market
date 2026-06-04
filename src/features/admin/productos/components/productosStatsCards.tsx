@@ -52,7 +52,7 @@ export function ProductosStatsCards({
         isLoading={isLoading}
       />
       <StatCard
-        label="Rechazados"
+        label="Inactivos"
         value={summary?.rechazados ?? 0}
         valueClassName="text-destructive"
         isLoading={isLoading}

@@ -6,10 +6,18 @@ import type { TAdminCiudad } from "../interfaces"
 interface CiudadCardProps {
   city: TAdminCiudad
   isDeleting?: boolean
+  isEditing?: boolean
+  onEdit: (city: TAdminCiudad) => void
   onDelete: (city: TAdminCiudad) => void
 }
 
-export function CiudadCard({ city, isDeleting = false, onDelete }: CiudadCardProps) {
+export function CiudadCard({
+  city,
+  isDeleting = false,
+  isEditing = false,
+  onEdit,
+  onDelete,
+}: CiudadCardProps) {
   return (
     <div className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/30">
       <div className="flex items-start justify-between">
@@ -61,15 +69,21 @@ export function CiudadCard({ city, isDeleting = false, onDelete }: CiudadCardPro
       <div className="mt-4 flex items-center justify-end gap-1 border-t border-border pt-4">
         <button
           type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          onClick={() => onEdit(city)}
+          disabled={isEditing || isDeleting}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
           aria-label={`Editar ${city.nombre}`}
         >
-          <Edit className="h-4 w-4" />
+          {isEditing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Edit className="h-4 w-4" />
+          )}
         </button>
         <button
           type="button"
           onClick={() => onDelete(city)}
-          disabled={isDeleting}
+          disabled={isDeleting || isEditing}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
           aria-label={`Eliminar ${city.nombre}`}
         >

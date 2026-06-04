@@ -10,7 +10,8 @@ import {
 } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Bell, Search, Store } from "lucide-react"
+import { Search, Store } from "lucide-react"
+import { NotificationsBell } from "@/features/notifications/components"
 import { useAppDispatch, useAppSelector } from "@/store"
 import { getAuthToken } from "@/lib/api-client"
 import {
@@ -122,13 +123,7 @@ export function ShopmanLayout({ children }: ShopmanLayoutProps) {
             </div>
 
             <div className="flex items-center gap-4">
-              <button
-                type="button"
-                className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground"
-                aria-label="Notificaciones"
-              >
-                <Bell className="h-4 w-4" />
-              </button>
+              <NotificationsBell scope="tendero" />
 
               <ShopmanUserMenu />
             </div>

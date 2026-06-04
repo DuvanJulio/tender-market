@@ -18,3 +18,11 @@ export type TPostCityBody = {
   departamento_id: number
   estado: boolean
 }
+
+export type TPatchCityBody = {
+  nombre?: string
+  departamento_id?: number
+  estado?: boolean
+}
+
+export type IPatchCityResponse = TBaseResponse<ICityOption>

@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Bell, Menu, Truck, X } from "lucide-react"
+import { Menu, Truck, X } from "lucide-react"
+import { NotificationsBell } from "@/features/notifications/components"
 import { useEffect, useState, type ReactNode } from "react"
 import { getAuthToken } from "@/lib/api-client"
 import { PROVEEDOR_MOCK_PROFILE, PROVEEDOR_NAV_ITEMS } from "../const"
@@ -12,30 +13,6 @@ function isNavActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: "Nuevo pedido #5678",
-    message: "Tienda Don Pepe realizó un pedido",
-    time: "Hace 2 min",
-    unread: true,
-  },
-  {
-    id: 2,
-    title: "Pedido confirmado",
-    message: "El pedido #5677 fue confirmado",
-    time: "Hace 30 min",
-    unread: true,
-  },
-  {
-    id: 3,
-    title: "Stock bajo",
-    message: "Aceite Vegetal Premium tiene poco stock",
-    time: "Hace 1 hora",
-    unread: false,
-  },
-]
-
 interface ProveedorLayoutProps {
   children: ReactNode
 }
@@ -44,7 +21,6 @@ export function ProveedorLayout({ children }: ProveedorLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   useEffect(() => {
     if (!getAuthToken()) {
@@ -64,8 +40,6 @@ export function ProveedorLayout({ children }: ProveedorLayoutProps) {
         : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
     }`
   }
-
-  const unreadCount = MOCK_NOTIFICATIONS.filter((n) => n.unread).length
 
   const sidebarContent = (onNavigate?: () => void) => (
     <>
@@ -187,75 +161,11 @@ export function ProveedorLayout({ children }: ProveedorLayoutProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setNotificationsOpen((open) => !open)}
-                className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label="Notificaciones"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 ? (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground">
-                    {unreadCount}
-                  </span>
-                ) : null}
-              </button>
-
-              {notificationsOpen ? (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setNotificationsOpen(false)}
-                  />
-                  <div className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-border bg-card shadow-lg">
-                    <div className="flex items-center justify-between border-b border-border p-4">
-                      <h3 className="font-semibold text-card-foreground">
-                        Notificaciones
-                      </h3>
-                      <Link
-                        href="/proveedor/notificaciones"
-                        className="text-xs text-primary hover:text-primary/80"
-                        onClick={() => setNotificationsOpen(false)}
-                      >
-                        Ver todas
-                      </Link>
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {MOCK_NOTIFICATIONS.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={`border-b border-border p-4 last:border-0 ${
-                            notification.unread ? "bg-primary/5" : ""
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div
-                              className={`mt-1 h-2 w-2 rounded-full ${
-                                notification.unread
-                                  ? "bg-primary"
-                                  : "bg-transparent"
-                              }`}
-                            />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-card-foreground">
-                                {notification.title}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {notification.message}
-                              </p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {notification.time}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              ) : null}
-            </div>
+            <NotificationsBell
+              scope="proveedor"
+              buttonClassName="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              iconClassName="h-5 w-5"
+            />
 
             <ProveedorUserMenu />
           </div>

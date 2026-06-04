@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2 } from "lucide-react"
+import { ImagePlus, Loader2, X } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/store"
 import {
   createProducto,
@@ -18,6 +18,7 @@ import {
   proveedorProductoFormSchema,
   type TProveedorProductoForm,
 } from "../const"
+import { apiUploadProductoImagenAction } from "../action"
 import type { TProveedorProducto } from "../interfaces"
 
 type TCategoriaOption = { id: number; label: string }
@@ -55,6 +56,9 @@ export function ProductoFormModal({
   const saveState = useAppSelector(selectSaveProveedorProducto)
   const [categoriaOptions, setCategoriaOptions] = useState<TCategoriaOption[]>([])
   const [loadingCategorias, setLoadingCategorias] = useState(false)
+  const [imagenPreview, setImagenPreview] = useState<string | null>(null)
+  const [uploadingImagen, setUploadingImagen] = useState(false)
+  const [imagenError, setImagenError] = useState<string | null>(null)
 
   const isEditing = producto != null
 
@@ -80,6 +84,8 @@ export function ProductoFormModal({
       stock: producto?.stock ?? 0,
       imagen_url: producto?.imagen_url ?? "",
     })
+    setImagenPreview(producto?.imagen_url ?? null)
+    setImagenError(null)
 
     setLoadingCategorias(true)
     apiGetCategoriasAction({ page: 1, pageSize: 50 })
@@ -93,8 +99,37 @@ export function ProductoFormModal({
 
   const handleClose = () => {
     form.reset()
+    setImagenPreview(null)
+    setImagenError(null)
     dispatch(resetSaveProducto())
     onClose()
+  }
+
+  async function handleImagenChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+
+    setImagenError(null)
+    setUploadingImagen(true)
+
+    const result = await apiUploadProductoImagenAction(file)
+
+    setUploadingImagen(false)
+
+    if (!result.success || !result.data?.url) {
+      setImagenError(result.message ?? "No se pudo subir la imagen")
+      return
+    }
+
+    form.setValue("imagen_url", result.data.url, { shouldDirty: true })
+    setImagenPreview(result.data.url)
+  }
+
+  function handleRemoveImagen() {
+    form.setValue("imagen_url", "", { shouldDirty: true })
+    setImagenPreview(null)
+    setImagenError(null)
   }
 
   const onSubmit = form.handleSubmit(async (data) => {
@@ -225,17 +260,60 @@ export function ProductoFormModal({
 
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            URL de imagen (opcional)
+            Imagen del producto (opcional)
           </label>
-          <input
-            {...form.register("imagen_url")}
-            placeholder="https://..."
-            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-          {form.formState.errors.imagen_url ? (
-            <p className="mt-1 text-xs text-destructive">
-              {form.formState.errors.imagen_url.message}
-            </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/40">
+              {imagenPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imagenPreview}
+                  alt="Vista previa"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <ImagePlus className="h-8 w-8 text-muted-foreground" />
+              )}
+            </div>
+            <div className="flex flex-1 flex-col gap-2">
+              <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
+                {uploadingImagen ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Subiendo...
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus className="h-4 w-4" />
+                    Elegir imagen
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  disabled={uploadingImagen || isSaving}
+                  onChange={handleImagenChange}
+                />
+              </label>
+              <p className="text-xs text-muted-foreground">
+                JPG, PNG, WebP o GIF. Máximo 5 MB.
+              </p>
+              {imagenPreview ? (
+                <button
+                  type="button"
+                  onClick={handleRemoveImagen}
+                  disabled={uploadingImagen || isSaving}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-destructive hover:underline"
+                >
+                  <X className="h-3 w-3" />
+                  Quitar imagen
+                </button>
+              ) : null}
+            </div>
+          </div>
+          {imagenError ? (
+            <p className="mt-1 text-xs text-destructive">{imagenError}</p>
           ) : null}
         </div>
 
@@ -250,7 +328,7 @@ export function ProductoFormModal({
           </button>
           <button
             type="submit"
-            disabled={isSaving}
+            disabled={isSaving || uploadingImagen}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             {isSaving ? (

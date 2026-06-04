@@ -10,11 +10,17 @@ import {
   selectCategoriasListView,
   selectCategoriasQuery,
   selectDeleteCategoria,
+  selectUpdateCategoria,
 } from "@/store/admin/categorias-slice"
 import { AdminPageHeader, AdminTablePagination } from "@/features/admin/components"
 import { DEFAULT_PAGE_SIZE } from "@/types/pagination"
-import type { TDeleteCategoriaTarget, TFetchCategoriasParams } from "../interfaces"
+import type {
+  TDeleteCategoriaTarget,
+  TEditCategoriaTarget,
+  TFetchCategoriasParams,
+} from "../interfaces"
 import { CategoriasCreateModal } from "./categoriasCreateModal"
+import { CategoriasEditModal } from "./categoriasEditModal"
 import { CategoriasList } from "./categoriasList"
 import { CategoriaDeleteAlertDialog } from "./categoriaDeleteAlertDialog"
 
@@ -36,6 +42,7 @@ export function CategoriasView() {
   )
   const listQuery = useAppSelector(selectCategoriasQuery)
   const deleteState = useAppSelector(selectDeleteCategoria)
+  const updateState = useAppSelector(selectUpdateCategoria)
 
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
@@ -43,6 +50,8 @@ export function CategoriasView() {
   const [parentIdForSub, setParentIdForSub] = useState<number | null>(null)
   const [targetToDelete, setTargetToDelete] =
     useState<TDeleteCategoriaTarget | null>(null)
+  const [targetToEdit, setTargetToEdit] =
+    useState<TEditCategoriaTarget | null>(null)
 
   const loadCategorias = useCallback(() => {
     dispatch(fetchCategorias(buildFetchParams(page, searchQuery)))
@@ -71,6 +80,10 @@ export function CategoriasView() {
   const handleCloseModal = () => {
     setShowAddModal(false)
     setParentIdForSub(null)
+  }
+
+  const handleEditRequest = (target: TEditCategoriaTarget) => {
+    setTargetToEdit(target)
   }
 
   const handleDeleteRequest = (target: TDeleteCategoriaTarget) => {
@@ -139,6 +152,8 @@ export function CategoriasView() {
           categories={categorias}
           isLoading={isLoading}
           deletingId={deleteState.categoriaId}
+          editingId={updateState.categoriaId}
+          onEdit={handleEditRequest}
           onDelete={handleDeleteRequest}
           onAddSubcategoria={handleAddSubcategoria}
         />
@@ -156,6 +171,12 @@ export function CategoriasView() {
         open={showAddModal}
         onClose={handleCloseModal}
         defaultParentId={parentIdForSub}
+      />
+
+      <CategoriasEditModal
+        open={targetToEdit != null}
+        target={targetToEdit}
+        onClose={() => setTargetToEdit(null)}
       />
 
       <CategoriaDeleteAlertDialog
