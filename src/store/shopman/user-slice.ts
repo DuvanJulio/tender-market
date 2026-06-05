@@ -1,21 +1,16 @@
 import { createAppSlice } from "@/store/slice"
 import type { TStatus } from "@/types"
 import { getUserDataAction } from "@/features/auth/sign-in/actions"
-import type { TUserRole } from "@/features/auth/sign-in/interfaces"
-
-export type TShopmanUserProfile = {
-  nombre: string
-  email: string
-  rol: TUserRole
-  negocio: string
-  initials: string
-}
+import {
+  mapUserProfileFromApi,
+  type TUserProfile,
+} from "@/features/account/utils/map-user-profile"
 
 type TShopmanUserState = {
   profileView: {
     status: TStatus
     message: string | undefined
-    profile: TShopmanUserProfile | null
+    profile: TUserProfile | null
   }
 }
 
@@ -54,33 +49,18 @@ const shopmanUserSlice = createAppSlice({
           return
         }
 
-        const { nombre, email, rol, negocio } = payload.data
+        const profile = mapUserProfileFromApi(payload.data)
 
-        if (!email || !rol) {
+        if (!profile) {
           state.profileView.status = "error"
           state.profileView.message = "Perfil de usuario incompleto"
           state.profileView.profile = null
           return
         }
 
-        const displayName = nombre?.trim() || email
-        const parts = displayName.split(/\s+/).filter(Boolean)
-        const initials =
-          parts.length >= 2
-            ? `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase()
-            : displayName.slice(0, 2).toUpperCase()
-
         state.profileView.status = "success"
         state.profileView.message = undefined
-        state.profileView.profile = {
-          nombre: displayName,
-          email,
-          rol,
-          negocio:
-            negocio?.trim() ||
-            (rol === "proveedor" ? "Mi empresa" : "Mi tienda"),
-          initials,
-        }
+        state.profileView.profile = profile
       },
       rejected: (state) => {
         state.profileView.status = "error"

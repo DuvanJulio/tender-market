@@ -6,8 +6,19 @@ import { Menu, Truck, X } from "lucide-react"
 import { NotificationsBell } from "@/features/notifications/components"
 import { useEffect, useState, type ReactNode } from "react"
 import { getAuthToken } from "@/lib/api-client"
-import { PROVEEDOR_MOCK_PROFILE, PROVEEDOR_NAV_ITEMS } from "../const"
+import { useAppDispatch, useAppSelector } from "@/store"
+import {
+  fetchPendientesCount,
+  selectProveedorPedidosPendientesCount,
+} from "@/store/proveedor/pedidos-slice"
+import {
+  fetchShopmanUser,
+  selectShopmanProfileView,
+} from "@/store/shopman/user-slice"
+import { PROVEEDOR_NAV_ITEMS } from "../const"
 import { ProveedorUserMenu } from "./proveedorUserMenu"
+
+const PEDIDOS_NAV_HREF = "/proveedor/pedidos"
 
 function isNavActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
@@ -20,13 +31,29 @@ interface ProveedorLayoutProps {
 export function ProveedorLayout({ children }: ProveedorLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const dispatch = useAppDispatch()
+  const pendientesCount = useAppSelector(selectProveedorPedidosPendientesCount)
+  const profileView = useAppSelector(selectShopmanProfileView)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (!getAuthToken()) {
       router.replace("/sign-in")
+      return
     }
-  }, [router])
+    dispatch(fetchPendientesCount())
+    if (profileView.status === "idle") {
+      dispatch(fetchShopmanUser())
+    }
+  }, [router, dispatch, pathname, profileView.status])
+
+  const pedidosNavBadge =
+    pendientesCount > 0 ? pendientesCount : undefined
+
+  const profile = profileView.profile
+  const sidebarInitials = profile?.initials ?? "··"
+  const sidebarName = profile?.negocio ?? profile?.nombre ?? "Proveedor"
+  const sidebarRole = profile ? "Proveedor verificado" : "Cargando..."
 
   const activeNavItem = PROVEEDOR_NAV_ITEMS.find((item) =>
     isNavActive(pathname, item.href)
@@ -62,9 +89,9 @@ export function ProveedorLayout({ children }: ProveedorLayoutProps) {
           >
             <item.icon className="h-5 w-5" />
             {item.label}
-            {item.badge ? (
+            {item.href === PEDIDOS_NAV_HREF && pedidosNavBadge ? (
               <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-primary px-1.5 text-xs font-medium text-sidebar-primary-foreground">
-                {item.badge}
+                {pedidosNavBadge > 9 ? "9+" : pedidosNavBadge}
               </span>
             ) : null}
           </Link>
@@ -74,15 +101,13 @@ export function ProveedorLayout({ children }: ProveedorLayoutProps) {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-accent text-sm font-medium text-sidebar-accent-foreground">
-            {PROVEEDOR_MOCK_PROFILE.initials}
+            {sidebarInitials}
           </div>
           <div className="flex-1 min-w-0">
             <p className="truncate text-sm font-medium text-sidebar-foreground">
-              {PROVEEDOR_MOCK_PROFILE.nombre}
+              {sidebarName}
             </p>
-            <p className="text-xs text-sidebar-foreground/60">
-              {PROVEEDOR_MOCK_PROFILE.rol}
-            </p>
+            <p className="text-xs text-sidebar-foreground/60">{sidebarRole}</p>
           </div>
         </div>
       </div>
@@ -130,9 +155,9 @@ export function ProveedorLayout({ children }: ProveedorLayoutProps) {
                   >
                     <item.icon className="h-5 w-5" />
                     {item.label}
-                    {item.badge ? (
+                    {item.href === PEDIDOS_NAV_HREF && pedidosNavBadge ? (
                       <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-primary px-1.5 text-xs font-medium text-sidebar-primary-foreground">
-                        {item.badge}
+                        {pedidosNavBadge > 9 ? "9+" : pedidosNavBadge}
                       </span>
                     ) : null}
                   </Link>

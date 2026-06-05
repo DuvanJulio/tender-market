@@ -31,6 +31,7 @@ export type IPatchProveedorPedidoEstadoResponse = {
   success: boolean
   message: string
   data?: TProveedorPedido
+  whatsapp_url?: string | null
 }
 
 export type TFetchProveedorPedidosParams = {

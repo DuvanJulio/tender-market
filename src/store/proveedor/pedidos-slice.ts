@@ -22,6 +22,7 @@ type TProveedorPedidosState = {
     status: TStatus
     message: string | undefined
     pedidoId: string | null
+    whatsappUrl: string | null
   }
 }
 
@@ -37,6 +38,7 @@ const initialState: TProveedorPedidosState = {
     status: "idle",
     message: undefined,
     pedidoId: null,
+    whatsappUrl: null,
   },
 }
 
@@ -87,6 +89,7 @@ const proveedorPedidosSlice = createAppSlice({
           state.updateEstado.status = "loading"
           state.updateEstado.message = undefined
           state.updateEstado.pedidoId = action.meta.arg.codigo
+          state.updateEstado.whatsappUrl = null
         },
         fulfilled: (state, action) => {
           if (!action.payload.success || !action.payload.data) {
@@ -97,6 +100,7 @@ const proveedorPedidosSlice = createAppSlice({
           state.updateEstado.status = "success"
           state.updateEstado.message = action.payload.message
           state.updateEstado.pedidoId = null
+          state.updateEstado.whatsappUrl = action.payload.whatsapp_url ?? null
           const updated = action.payload.data
           const previous = state.listView.pedidos.find((p) => p.id === updated.id)
           const filterEstado = state.listView.query.estado
@@ -134,16 +138,29 @@ const proveedorPedidosSlice = createAppSlice({
     resetUpdatePedidoEstado: create.reducer((state) => {
       state.updateEstado = initialState.updateEstado
     }),
+    fetchPendientesCount: create.asyncThunk(
+      () => apiGetProveedorPedidosAction({ estado: "pending" }),
+      {
+        fulfilled: (state, action) => {
+          if (!action.payload.success || !action.payload.data) return
+          state.listView.pendientesCount =
+            action.payload.data.pendientes_count
+        },
+      }
+    ),
   }),
   selectors: {
     selectProveedorPedidosListView: (state) => state.listView,
     selectProveedorPedidosQuery: (state) => state.listView.query,
     selectUpdateProveedorPedidoEstado: (state) => state.updateEstado,
+    selectProveedorPedidosPendientesCount: (state) =>
+      state.listView.pendientesCount,
   },
 })
 
 export const {
   fetchPedidos,
+  fetchPendientesCount,
   updatePedidoEstado,
   resetUpdatePedidoEstado,
 } = proveedorPedidosSlice.actions
@@ -152,6 +169,7 @@ export const {
   selectProveedorPedidosListView,
   selectProveedorPedidosQuery,
   selectUpdateProveedorPedidoEstado,
+  selectProveedorPedidosPendientesCount,
 } = proveedorPedidosSlice.selectors
 
 export default proveedorPedidosSlice.reducer

@@ -110,12 +110,10 @@ export function ShopmanLayout({ children }: ShopmanLayoutProps) {
                 <input
                   type="search"
                   placeholder="Buscar productos, marcas, categorias..."
-                  value={isCatalog ? searchTerm : undefined}
-                  onChange={
-                    isCatalog
-                      ? (event) => setSearchTerm(event.target.value)
-                      : undefined
-                  }
+                  value={isCatalog ? searchTerm : ""}
+                  onChange={(event) => {
+                    if (isCatalog) setSearchTerm(event.target.value)
+                  }}
                   readOnly={!isCatalog}
                   className="h-10 w-full rounded-full border border-input bg-background pl-10 pr-4 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
