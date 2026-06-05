@@ -190,6 +190,11 @@ const proveedorProductosSlice = createAppSlice({
     resetDeleteProducto: create.reducer((state) => {
       state.deleteProducto = initialState.deleteProducto
     }),
+    resetProveedorProductos: create.reducer((state) => {
+      state.listView = initialState.listView
+      state.saveProducto = initialState.saveProducto
+      state.deleteProducto = initialState.deleteProducto
+    }),
   }),
   selectors: {
     selectProveedorProductosListView: (state) => state.listView,
@@ -206,6 +211,7 @@ export const {
   deleteProducto,
   resetSaveProducto,
   resetDeleteProducto,
+  resetProveedorProductos,
 } = proveedorProductosSlice.actions
 
 export const {

@@ -23,6 +23,9 @@ const proveedorDashboardSlice = createAppSlice({
   name: "proveedorDashboard",
   initialState,
   reducers: (create) => ({
+    resetProveedorDashboard: create.reducer((state) => {
+      state.view = initialState.view
+    }),
     fetchProveedorDashboard: create.asyncThunk(
       async () => apiGetProveedorDashboardAction(),
       {
@@ -52,6 +55,7 @@ const proveedorDashboardSlice = createAppSlice({
   },
 })
 
-export const { fetchProveedorDashboard } = proveedorDashboardSlice.actions
+export const { fetchProveedorDashboard, resetProveedorDashboard } =
+  proveedorDashboardSlice.actions
 export const { selectProveedorDashboardView } = proveedorDashboardSlice.selectors
 export default proveedorDashboardSlice.reducer

@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useMemo } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAppDispatch, useAppSelector } from "@/store"
 import { setAuthToken } from "@/lib/api-client"
+import { resetSessionState } from "@/store/reset-session-state"
 import {
   clearSignInError,
   selectSignInView,
@@ -38,7 +39,18 @@ function getRedirectPathByRole(rol?: string): string {
 export function SignInTemplate() {
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const signInView = useAppSelector(selectSignInView)
+
+  const infoMessage = useMemo(() => {
+    if (searchParams.get("verify") === "1") {
+      return "Revisa tu correo y confirma tu cuenta antes de iniciar sesión."
+    }
+    if (searchParams.get("registered") === "1") {
+      return "Cuenta creada correctamente. Ya puedes iniciar sesión."
+    }
+    return null
+  }, [searchParams])
 
   const form = useForm<TSignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -59,6 +71,7 @@ export function SignInTemplate() {
     if (!payload?.success) return
 
     if (payload.data?.token) {
+      resetSessionState(dispatch)
       setAuthToken(payload.data.token)
     }
 
@@ -82,6 +95,7 @@ export function SignInTemplate() {
         form={form}
         showPassword={signInView.showPassword}
         serverError={serverError}
+        infoMessage={infoMessage}
         onTogglePassword={() => dispatch(toggleShowPassword())}
         onSubmit={onSubmit}
       />
