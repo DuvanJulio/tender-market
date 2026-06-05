@@ -26,13 +26,17 @@ export const StatsSection = () => {
                     </div>
 
                     <div className="text-center">
-                        <div className="text-3xl font-bold text-primary sm:text-4xl">50K+</div>
+                        <div className="text-3xl font-bold text-primary sm:text-4xl">
+                            {stats.data?.pedidos_mensuales ?? 0}
+                        </div>
                         <div className="mt-1 text-sm text-muted-foreground">Pedidos Mensuales</div>
                     </div>
 
                     <div className="text-center">
-                        <div className="text-3xl font-bold text-primary sm:text-4xl">98%</div>
-                        <div className="mt-1 text-sm text-muted-foreground">Satisfacción</div>
+                        <div className="text-3xl font-bold text-primary sm:text-4xl">
+                            {stats.data?.productos_total ?? 0}+
+                        </div>
+                        <div className="mt-1 text-sm text-muted-foreground">Productos</div>
                     </div>
 
                 </div>

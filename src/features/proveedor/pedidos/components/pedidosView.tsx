@@ -79,13 +79,35 @@ export function ProveedorPedidosView() {
   useEffect(() => {
     if (updateState.status === "success" && updateState.message) {
       toast.success(updateState.message)
+      if (updateState.whatsappUrl) {
+        toast("Avisar al cliente por WhatsApp", {
+          description:
+            "Se abrirá WhatsApp con el mensaje listo. Solo debes pulsar Enviar.",
+          duration: 20_000,
+          action: {
+            label: "Abrir WhatsApp",
+            onClick: () => {
+              window.open(
+                updateState.whatsappUrl!,
+                "_blank",
+                "noopener,noreferrer"
+              )
+            },
+          },
+        })
+      }
       dispatch(resetUpdatePedidoEstado())
     }
     if (updateState.status === "error" && updateState.message) {
       toast.error(updateState.message)
       dispatch(resetUpdatePedidoEstado())
     }
-  }, [updateState.status, updateState.message, dispatch])
+  }, [
+    updateState.status,
+    updateState.message,
+    updateState.whatsappUrl,
+    dispatch,
+  ])
 
   const handleStatusChange = (
     codigo: string,
