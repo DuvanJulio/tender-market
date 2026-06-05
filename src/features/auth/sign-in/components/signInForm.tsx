@@ -91,7 +91,7 @@ export function SignInForm({
           </label>
         </div>
         <Link
-          href="/auth/forgot-password"
+          href="/forgot-password"
           className="text-sm font-medium text-primary hover:text-primary/80"
         >
           {"¿Olvidaste tu contraseña?"}

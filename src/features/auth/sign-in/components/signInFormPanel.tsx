@@ -4,14 +4,15 @@ import Link from "next/link"
 import { Store } from "lucide-react"
 import type { UseFormReturn } from "react-hook-form"
 import type { TSignInFormData } from "../const"
-import { SignInDemoAccess } from "./signInDemoAccess"
 import { SignInForm } from "./signInForm"
+import { SignInInfoBanner } from "./signInInfoBanner"
 import { SignInServerError } from "./signInServerError"
 
 interface SignInFormPanelProps {
   form: UseFormReturn<TSignInFormData>
   showPassword: boolean
   serverError: string | null
+  infoMessage: string | null
   onTogglePassword: () => void
   onSubmit: () => void
 }
@@ -20,6 +21,7 @@ export function SignInFormPanel({
   form,
   showPassword,
   serverError,
+  infoMessage,
   onTogglePassword,
   onSubmit,
 }: SignInFormPanelProps) {
@@ -43,6 +45,8 @@ export function SignInFormPanel({
             Ingresa a tu cuenta para continuar
           </p>
 
+          {infoMessage && <SignInInfoBanner message={infoMessage} />}
+
           {serverError && <SignInServerError message={serverError} />}
 
           <SignInForm
@@ -51,8 +55,6 @@ export function SignInFormPanel({
             onTogglePassword={onTogglePassword}
             onSubmit={onSubmit}
           />
-
-          <SignInDemoAccess />
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
             {"¿No tienes cuenta?"}{" "}

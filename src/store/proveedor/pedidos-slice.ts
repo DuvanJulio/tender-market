@@ -46,6 +46,10 @@ const proveedorPedidosSlice = createAppSlice({
   name: "proveedorPedidos",
   initialState,
   reducers: (create) => ({
+    resetProveedorPedidos: create.reducer((state) => {
+      state.listView = initialState.listView
+      state.updateEstado = initialState.updateEstado
+    }),
     fetchPedidos: create.asyncThunk(
       async (params: TFetchProveedorPedidosParams) =>
         apiGetProveedorPedidosAction(params),
@@ -163,6 +167,7 @@ export const {
   fetchPendientesCount,
   updatePedidoEstado,
   resetUpdatePedidoEstado,
+  resetProveedorPedidos,
 } = proveedorPedidosSlice.actions
 
 export const {

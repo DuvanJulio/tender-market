@@ -56,10 +56,8 @@ export function ProveedorDashboardView() {
   const { status, message, data } = useAppSelector(selectProveedorDashboardView)
 
   useEffect(() => {
-    if (status === "idle") {
-      dispatch(fetchProveedorDashboard())
-    }
-  }, [dispatch, status])
+    dispatch(fetchProveedorDashboard())
+  }, [dispatch])
 
   const statCards = useMemo(() => {
     if (!data) return []

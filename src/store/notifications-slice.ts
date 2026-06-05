@@ -30,6 +30,9 @@ const notificationsSlice = createAppSlice({
   name: "notifications",
   initialState,
   reducers: (create) => ({
+    resetNotifications: create.reducer((state) => {
+      Object.assign(state, initialState)
+    }),
     fetchNotificaciones: create.asyncThunk(
       async (scope: TNotificacionesScope) =>
         apiGetNotificacionesAction(scope),
@@ -104,6 +107,7 @@ const notificationsSlice = createAppSlice({
 })
 
 export const {
+  resetNotifications,
   fetchNotificaciones,
   markNotificacionLeida,
   markAllNotificacionesLeidas,

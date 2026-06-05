@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAppDispatch, useAppSelector } from "@/store"
 import { setAuthToken } from "@/lib/api-client"
+import { resetSessionState } from "@/store/reset-session-state"
 import {
   clearRegisterError,
   registerUser,
@@ -82,12 +83,17 @@ export function SignUpTemplate() {
     if (!payload?.success) return
 
     if (payload.data?.token) {
+      resetSessionState(dispatch)
       setAuthToken(payload.data.token)
       router.push(getRedirectPathByRole(payload.data.rol))
       return
     }
 
-    router.push("/sign-in?registered=1")
+    router.push(
+      payload.data?.requires_email_verification
+        ? "/sign-in?verify=1"
+        : "/sign-in?registered=1"
+    )
   })
 
   return (

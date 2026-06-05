@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Bell, ChevronDown, LogOut, User } from "lucide-react"
 import { useAppDispatch } from "@/store"
 import { setAuthToken } from "@/lib/api-client"
-import { clearShopmanUser } from "@/store/shopman/user-slice"
+import { resetSessionState } from "@/store/reset-session-state"
 import type { TUserProfile } from "../utils/map-user-profile"
 import type { TStatus } from "@/types"
 
@@ -44,7 +44,7 @@ export function AccountUserMenu({
   const handleLogout = () => {
     setUserMenuOpen(false)
     setAuthToken(null)
-    dispatch(clearShopmanUser())
+    resetSessionState(dispatch)
     router.push("/sign-in")
   }
 

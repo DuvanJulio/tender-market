@@ -4,6 +4,7 @@ import { ArrowRight, Eye, EyeOff, Lock, Mail, Phone, User } from "lucide-react"
 import type { UseFormReturn } from "react-hook-form"
 import type { TSignUpFormData } from "../const"
 import type { TSignUpRole } from "../interfaces"
+import { useEmailAvailability } from "../hooks/useEmailAvailability"
 
 interface SignUpPersonalStepProps {
   form: UseFormReturn<TSignUpFormData>
@@ -34,8 +35,14 @@ export function SignUpPersonalStep({
 }: SignUpPersonalStepProps) {
   const {
     register,
+    watch,
     formState: { errors, isSubmitting },
   } = form
+
+  const emailValue = watch("email")
+  const emailAvailability = useEmailAvailability(emailValue)
+  const emailUnavailable = emailAvailability.status === "unavailable"
+  const emailChecking = emailAvailability.status === "checking"
 
   return (
     <form onSubmit={onSubmit} className="mt-8 space-y-4">
@@ -91,6 +98,19 @@ export function SignUpPersonalStep({
         </div>
         {errors.email && (
           <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
+        )}
+        {!errors.email && emailAvailability.status !== "idle" && (
+          <p
+            className={`mt-1 text-xs ${
+              emailUnavailable || emailAvailability.status === "error"
+                ? "text-red-500"
+                : emailChecking
+                  ? "text-muted-foreground"
+                  : "text-emerald-600 dark:text-emerald-400"
+            }`}
+          >
+            {emailChecking ? "Verificando correo..." : emailAvailability.message}
+          </p>
         )}
       </div>
 
@@ -180,7 +200,7 @@ export function SignUpPersonalStep({
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || emailChecking || emailUnavailable}
         className="mt-6 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Continuar
